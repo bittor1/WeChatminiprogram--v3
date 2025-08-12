@@ -1,0 +1,109 @@
+<view class="container">
+  <!-- 独立的用户头像按钮 - 固定在右上角 -->
+  <view class="top-right-avatar-fixed" catchtap="openUserCenter" data-test="user-center-avatar">
+    <image wx:if="{{userInfo && userInfo.avatar}}" class="avatar-image" src="{{userInfo.avatar}}" mode="aspectFill"></image>
+    <view wx:else class="avatar-placeholder">👤</view>
+  </view>
+
+  <!-- 头部区域 -->
+  <view class="header-section px-20 py-16">
+    <!-- 标题和用户头像区 -->
+    <view class="title-header">
+      <text class="main-title h1">伦敦必吃榜</text>
+    </view>
+    
+    <view class="title-container text-center mb-16">
+      <text class="season-text text-small">第一赛季</text>
+      <text class="sub-title text-small">London DECHI Leaderboard</text>
+      <text class="description text-small">你今天上榜了吗</text>
+    </view>
+
+    <!-- 数据统计卡片 -->
+    <view class="stats-card card flex p-16">
+      <view class="stat-item flex-1 flex flex-col items-center">
+        <text class="stat-number text-number">{{rankings.length}}</text>
+        <text class="stat-label text-small">上榜人数</text>
+      </view>
+      <view class="stat-item flex-1 flex flex-col items-center">
+        <text class="stat-number text-number">{{totalVotes}}</text>
+        <text class="stat-label text-small">总投票</text>
+      </view>
+      <view class="stat-item flex-1 flex flex-col items-center">
+        <view class="stat-icon">🔥</view>
+        <text class="stat-label text-small">火热榜</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 排行榜列表 -->
+  <view class="ranking-list px-20">
+    <view 
+      class="ranking-item card flex items-center p-16 mb-16" 
+      wx:for="{{rankings}}" 
+      wx:key="id"
+      bindtap="goToDetail"
+      data-id="{{item.id}}"
+    >
+      <!-- 排名标识 -->
+      <view class="rank-indicator flex justify-center items-center">
+        <view wx:if="{{item.rank === 1}}" class="rank-icon">👑</view>
+        <view wx:elif="{{item.rank === 2}}" class="rank-icon">🏆</view>
+        <view wx:elif="{{item.rank === 3}}" class="rank-icon">⭐</view>
+        <text wx:else class="rank-number">{{item.rank}}</text>
+      </view>
+      
+      <!-- 头像 -->
+      <image class="avatar" src="{{item.avatar}}" mode="aspectFill"></image>
+      
+      <!-- 用户信息 -->
+      <view class="user-info flex-1 px-16">
+        <view class="flex items-center gap-8">
+          <text class="user-name h2">{{item.name}}</text>
+          <view wx:if="{{item.hotLevel >= 4}}" class="badge badge-red">
+            <text class="badge-icon">🔥</text>
+            <text class="badge-text">火热</text>
+          </view>
+          <view wx:elif="{{item.hotLevel >= 3}}" class="badge badge-green">
+            <text class="badge-icon">📈</text>
+            <text class="badge-text">上升</text>
+          </view>
+        </view>
+        <view class="flex items-center">
+          <text class="rank-position text-small">#{{item.rank}}</text>
+          <view class="trend-indicator flex items-center">
+            <view class="trend-dot {{item.trend === 'up' ? 'trend-up' : item.trend === 'down' ? 'trend-down' : 'trend-stable'}}"></view>
+            <text class="trend-text text-small {{item.trend === 'up' ? 'text-green' : item.trend === 'down' ? 'text-red' : 'text-gray'}}">
+              {{item.trend === 'up' ? '势头正猛' : item.trend === 'down' ? '有所下滑' : '稳定发挥'}}
+            </text>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 人想吃 -->
+      <view class="vote-count flex flex-col items-center">
+        <text class="vote-number text-number">{{item.votes}}</text>
+        <text class="vote-label text-small">人想吃</text>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 悬浮关于按钮 (左下角) -->
+  <view class="floating-btn about-btn" bindtap="goToAbout">
+    <text class="btn-icon">ℹ️</text>
+    <text class="btn-text">关于作者</text>
+  </view>
+  
+  <!-- 悬浮添加按钮 (右下角) -->
+  <view class="floating-btn add-btn" bindtap="goToCreate">
+    <text class="btn-icon">+</text>
+    <text class="btn-text">提名朋友</text>
+  </view>
+  
+  <!-- 用户中心抽屉组件 -->
+  <user-center-drawer
+    show="{{showUserCenter}}"
+    userInfo="{{userInfo}}"
+    bind:close="closeUserCenter"
+    bind:logout="handleUserLogout"
+  />
+</view>

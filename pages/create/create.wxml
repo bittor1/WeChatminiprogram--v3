@@ -1,0 +1,149 @@
+<!--pages/create/create.wxml-->
+<view class="container">
+  <!-- 主要内容 -->
+  <view class="content px-20">
+    <!-- 提名表单卡片 -->
+    <view class="nomination-card card p-16 mb-16">
+      <view class="card-header text-center mb-16">
+        <text class="card-title h2">提名上榜</text>
+        <text class="card-subtitle text-body">把你的朋友加入伦敦必吃榜</text>
+      </view>
+      
+      <!-- 头像上传 -->
+      <view class="form-section mb-16">
+        <text class="section-label h2">朋友头像</text>
+        <view class="avatar-upload flex flex-col items-center">
+          <view class="avatar-preview">
+            <!-- 视频预览 -->
+            <video wx:if="{{fileType === 'video' && !previewConfirmed && previewImage}}" 
+              class="avatar-video" 
+              src="{{previewImage}}" 
+              poster="{{previewImage}}" 
+              object-fit="cover"
+              controls="{{false}}"
+              loop
+              autoplay
+            ></video>
+            
+            <!-- 图片或GIF预览 -->
+            <image wx:elif="{{previewImage}}" class="avatar-image" src="{{previewImage}}" mode="aspectFill"></image>
+            
+            <!-- 空状态 -->
+            <view wx:else class="upload-placeholder">
+              <view class="upload-icon">⬆️</view>
+            </view>
+            
+            <!-- 进度条 -->
+            <view wx:if="{{isProcessing && showProgress}}" class="processing-overlay">
+              <view class="processing-progress">
+                <view class="progress-bar">
+                  <view class="progress-fill" style="width:{{processingProgress}}%;"></view>
+                </view>
+                <text class="progress-text">处理中... {{processingProgress}}%</text>
+              </view>
+            </view>
+          </view>
+          
+          <!-- 预览已确认的头像 -->
+          <view wx:if="{{avatar && previewConfirmed}}" class="avatar-confirmed-tag">
+            <text class="confirmed-icon">✓</text>
+            
+            <!-- 移除按钮 -->
+            <view class="remove-avatar-btn" bindtap="removeAvatar">
+              <text class="remove-icon">×</text>
+            </view>
+          </view>
+          
+          <!-- 确认预览 -->
+          <view wx:if="{{previewImage && !previewConfirmed && !isProcessing}}" class="preview-actions flex justify-center gap-8 my-16">
+            <button class="action-btn btn btn-secondary" bindtap="cancelPreview">
+              <text>取消</text>
+            </button>
+            <button class="action-btn btn btn-primary" bindtap="confirmPreview">
+              <text>确认使用</text>
+            </button>
+          </view>
+          
+          <!-- 上传方式 -->
+          <view wx:elif="{{!previewImage && !isProcessing}}" class="upload-methods-wrapper">
+            <view class="upload-methods">
+              <button class="upload-method-btn {{currentMethod === 'camera' ? 'active' : ''}}" bindtap="selectMethod" data-method="camera">
+                <view class="method-icon">📷</view>
+                <text class="method-text">拍照</text>
+              </button>
+              <button class="upload-method-btn {{currentMethod === 'album' ? 'active' : ''}}" bindtap="selectMethod" data-method="album">
+                <view class="method-icon">🖼️</view>
+                <text class="method-text">相册</text>
+              </button>
+              <button class="upload-method-btn {{currentMethod === 'video' ? 'active' : ''}}" bindtap="selectMethod" data-method="video">
+                <view class="method-icon">📹</view>
+                <text class="method-text">录像</text>
+              </button>
+            </view>
+          </view>
+          
+          <!-- 上传按钮 -->
+          <block wx:if="{{currentMethod && !previewImage && !isProcessing}}">
+            <button class="upload-btn btn btn-primary" bindtap="uploadAvatar">
+              <text>点击{{currentMethod === 'camera' ? '拍照' : currentMethod === 'album' ? '选择图片/视频' : '录制视频'}}</text>
+            </button>
+          </block>
+          
+          <view class="upload-tips text-center mt-16">
+            <text class="upload-tip text-small">支持图片、GIF和短视频</text>
+            <text class="upload-tip text-small">视频将自动转换为GIF格式</text>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 昵称输入 -->
+      <view class="form-section mb-16">
+        <text class="section-label h2">朋友昵称</text>
+        <input 
+          class="nickname-input input" 
+          placeholder="输入朋友的昵称或外号..." 
+          value="{{nickname}}" 
+          bindinput="onNicknameInput" 
+        />
+        <text class="input-tip text-small">建议使用大家熟悉的称呼或外号</text>
+      </view>
+      
+      <!-- 提交按钮 -->
+      <button 
+        class="submit-btn btn btn-primary" 
+        bindtap="handleSubmit"
+        disabled="{{!nickname.trim() || !avatar}}"
+      >
+        提名上榜
+      </button>
+    </view>
+    
+    <!-- 友情提醒 -->
+    <view class="info-box">
+      <view class="info-header flex items-center mb-8">
+        <view class="info-dot"></view>
+        <text class="info-title h2">友情提醒</text>
+      </view>
+      
+      <view class="info-list">
+        <view class="info-item flex items-center">
+          <text class="info-text text-body">• 这是朋友间的娱乐互动，请善意调侃</text>
+        </view>
+        <view class="info-item flex items-center">
+          <text class="info-text text-body">• 提名前最好征得朋友同意哦</text>
+        </view>
+        <view class="info-item flex items-center">
+          <text class="info-text text-body">• 上传的视频会自动转换为GIF格式</text>
+        </view>
+        <view class="info-item flex items-center">
+          <text class="info-text text-body">• 大家一起开心最重要 😄</text>
+        </view>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 返回按钮 -->
+  <view class="back-to-home-btn" bindtap="goBackToHome">
+    <text class="back-icon">←</text>
+  </view>
+</view>

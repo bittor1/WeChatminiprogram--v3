@@ -1,0 +1,15 @@
+{
+  "name": "videoToGif",
+  "version": "1.0.0",
+  "description": "将视频文件转换为GIF格式",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3",
+    "fluent-ffmpeg": "^2.1.2"
+  }
+} 

@@ -1,0 +1,42 @@
+<view class="container">
+  <!-- 页面标题 -->
+  <view class="header">
+    <view class="back-button" bindtap="goBack">
+      <text class="back-icon">←</text>
+    </view>
+    <text class="header-title">我的订单</text>
+    <view class="header-placeholder"></view>
+  </view>
+  
+  <!-- 加载中状态 -->
+  <view class="loading-state" wx:if="{{loading}}">
+    <view class="loading-icon">⟳</view>
+    <text class="loading-text">加载中...</text>
+  </view>
+  
+  <!-- 订单列表 -->
+  <view class="content" wx:elif="{{hasOrders}}">
+    <view class="order-list">
+      <view class="order-card" wx:for="{{orders}}" wx:key="id" bindtap="viewOrderDetail" data-id="{{item.id}}">
+        <view class="order-info">
+          <text class="order-title">{{item.title}}</text>
+          <view class="order-status">
+            <text class="status-dot {{item.status}}"></text>
+            <text class="status-text {{item.status}}">{{item.statusText}}</text>
+          </view>
+          <text class="order-date">{{item.date}}</text>
+          <text class="order-id">订单号：{{item.id}}</text>
+        </view>
+        <view class="order-amount">
+          <text class="amount-value">¥{{item.amount.toFixed(2)}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 空状态 -->
+  <view class="empty-state" wx:else>
+    <view class="empty-icon">🧾</view>
+    <text class="empty-text">暂无订单记录</text>
+  </view>
+</view> 

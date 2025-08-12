@@ -1,0 +1,232 @@
+/* 遮罩层 */
+.drawer-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6); /* 更深的黑色 */
+  z-index: 999;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.drawer-mask.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 抽屉容器 - 现在从顶部右侧弹出 */
+.drawer-container {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 90%; /* 稍微加宽 */
+  height: 100%;
+  background-color: #FFFFFF;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -8px 0 20px rgba(0, 0, 0, 0.2); /* 加强阴影 */
+  padding: 20px 0;
+  box-sizing: border-box;
+  transition: transform 0.3s ease;
+  transform: translateX(100%); /* 默认隐藏在右侧 */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.drawer-container.visible {
+  transform: translateX(0);
+}
+
+/* 关闭按钮 */
+.close-btn {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  width: 36px; /* 加大按钮 */
+  height: 36px; /* 加大按钮 */
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px; /* 加大字号 */
+  color: #4B5563;
+  z-index: 1001;
+  font-weight: bold;
+}
+
+.close-btn:active {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* 用户信息区域 */
+.user-info-section {
+  display: flex;
+  align-items: center;
+  padding: 20px;
+  position: relative;
+  margin-bottom: 20px;
+  /* 添加顶部内边距以避免状态栏遮挡 */
+  padding-top: 40px;
+}
+
+.user-avatar-container {
+  margin-right: 16px;
+}
+
+.user-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background-color: #F3F4F6;
+}
+
+.user-details {
+  flex: 1;
+  overflow: hidden;
+}
+
+.user-name {
+  font-size: 18px;
+  color: #1F2937;
+  font-weight: 600;
+  margin-bottom: 4px;
+  display: block;
+}
+
+.user-status {
+  font-size: 14px;
+  color: #6B7280;
+  display: block;
+}
+
+.profile-link {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+}
+
+.link-text {
+  font-size: 12px;
+  color: #6B7280;
+}
+
+.link-arrow {
+  font-size: 12px;
+  color: #6B7280;
+  margin-left: 4px;
+}
+
+/* 菜单分组 */
+.menu-group {
+  margin-bottom: 24px;
+}
+
+.menu-group:first-child {
+  border-top: 1px solid #F3F4F6;
+}
+
+/* 菜单项 */
+.menu-item {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #F3F4F6;
+  position: relative;
+}
+
+.menu-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 16px;
+  font-size: 20px;
+}
+
+.menu-text {
+  flex: 1;
+  font-size: 16px;
+  color: #1F2937;
+}
+
+.menu-arrow {
+  font-size: 14px;
+  color: #9CA3AF;
+}
+
+/* 退出登录按钮 */
+.logout-section {
+  margin-top: auto;
+  padding: 0 20px;
+}
+
+.logout-btn {
+  width: 100%;
+  height: 44px;
+  border-radius: 8px;
+  background-color: #F3F4F6;
+  color: #6B7280;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+}
+
+.logout-btn:after {
+  border: none;
+}
+
+/* 调试面板 */
+.debug-panel {
+  margin-top: 20px;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  margin: 20px;
+  font-size: 12px;
+  color: #6B7280;
+}
+
+.debug-title {
+  font-weight: bold;
+  margin-bottom: 5px;
+  display: block;
+}
+
+.debug-logs {
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.debug-log {
+  display: block;
+  padding: 2px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* 调试指示器 */
+.debug-indicator {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background-color: rgba(239, 68, 68, 0.9);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  z-index: 2000;
+}
+
+.debug-indicator.active {
+  background-color: rgba(34, 197, 94, 0.9);
+} 

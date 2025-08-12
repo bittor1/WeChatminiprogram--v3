@@ -1,0 +1,199 @@
+/* 页面容器 */
+.container {
+  min-height: 100vh;
+  background-color: #F7F8FA;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 页面标题 */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 52px;
+  background-color: #FFFFFF;
+  padding: 0 20px;
+  position: relative;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.back-button {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.back-icon {
+  font-size: 20px;
+  color: #1F2937;
+}
+
+.header-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1F2937;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.header-placeholder {
+  width: 32px;
+}
+
+/* 内容区域 */
+.content {
+  flex: 1;
+  padding: 16px 20px;
+}
+
+/* 订单列表 */
+.order-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 订单卡片 */
+.order-card {
+  background-color: #FFFFFF;
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.order-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.order-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1F2937;
+  margin-bottom: 8px;
+}
+
+.order-status {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+
+.status-dot.success {
+  background-color: #22C55E;
+}
+
+.status-dot.pending {
+  background-color: #F59E0B;
+}
+
+.status-dot.failed {
+  background-color: #EF4444;
+}
+
+.status-text {
+  font-size: 14px;
+  color: #6B7280;
+}
+
+.status-text.success {
+  color: #22C55E;
+}
+
+.status-text.pending {
+  color: #F59E0B;
+}
+
+.status-text.failed {
+  color: #EF4444;
+}
+
+.order-date {
+  font-size: 14px;
+  color: #6B7280;
+  margin-bottom: 4px;
+}
+
+.order-id {
+  font-size: 14px;
+  color: #9CA3AF;
+}
+
+.order-amount {
+  display: flex;
+  align-items: flex-start;
+  padding-left: 16px;
+}
+
+.amount-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1F2937;
+}
+
+/* 空状态 */
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.empty-icon {
+  font-size: 56px;
+  margin-bottom: 16px;
+  color: #D1D5DB;
+}
+
+.empty-text {
+  font-size: 16px;
+  color: #9CA3AF;
+}
+
+/* 加载中状态 */
+.loading-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.loading-icon {
+  font-size: 32px;
+  margin-bottom: 16px;
+  color: #6B7280;
+  animation: spin 1s linear infinite;
+}
+
+.loading-text {
+  font-size: 16px;
+  color: #6B7280;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+} 

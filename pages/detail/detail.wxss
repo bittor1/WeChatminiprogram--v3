@@ -1,0 +1,311 @@
+/* pages/detail/detail.wxss */
+.container {
+  min-height: 100vh;
+  background: #F7F8FA;
+}
+
+.content {
+  padding-top: 16px;
+  padding-bottom: 40px;
+}
+
+/* 个人资料卡片 */
+.profile-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px;
+  margin: 20px;
+  border-radius: 16px;
+}
+
+.profile-avatar-container {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.profile-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: #F3F4F6;
+  object-fit: cover;
+}
+
+.rank-tag {
+  position: absolute;
+  top: -4px;
+  right: -8px;
+  background: #F97316;
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 999px;
+}
+
+.profile-name {
+  margin-bottom: 4px;
+  text-align: center;
+}
+
+.profile-title {
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.badge-row {
+  margin: 12px 0;
+}
+
+.points-display {
+  background: #F3F4F6;
+  border-radius: 999px;
+  padding: 8px 16px;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.points-number {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1F2937;
+}
+
+.points-label {
+  color: #6B7280;
+}
+
+/* 操作按钮组 */
+.action-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 20px;
+}
+
+.action-btn {
+  flex: 1;
+}
+
+.btn-icon {
+  margin-right: 4px;
+}
+
+/* 音效功能区 */
+.sound-section {
+  display: flex;
+  gap: 12px;
+  margin: 16px 20px;
+}
+
+.sound-btn {
+  flex: 1.5;
+}
+
+.record-btn {
+  flex: 2;
+}
+
+/* 弹幕输入区 */
+.danmaku-input-section {
+  margin: 0 20px;
+}
+
+.danmaku-input {
+  height: 44px;
+  background: #F9FAFB;
+}
+
+/* 自定义投票数 */
+.mb-8 {
+  margin-bottom: 8px;
+}
+
+.mb-16 {
+  margin-bottom: 16px;
+}
+
+.vote-count-control {
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.vote-count-btn {
+  width: 36px;
+  height: 36px;
+  background: #F9FAFB;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: #6B7280;
+  padding: 0;
+  line-height: 1;
+  border: none;
+}
+
+.vote-count-input {
+  width: 60px;
+  height: 36px;
+  text-align: center;
+  font-size: 16px;
+  color: #1F2937;
+  border: none;
+  border-left: 1px solid #E5E7EB;
+  border-right: 1px solid #E5E7EB;
+}
+
+.vote-price {
+  color: #6B7280;
+  font-size: 14px;
+}
+
+/* 战绩墙 */
+.achievements-section, .comments-section {
+  margin: 16px 20px;
+}
+
+.section-header {
+  margin-bottom: 16px;
+}
+
+.section-icon {
+  font-size: 20px;
+  margin-right: 8px;
+}
+
+.achievements-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.achievement-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 16px;
+  border-radius: 12px;
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+}
+
+.achievement-item.success {
+  background: #F0FDF4;
+  border-color: #DCFCE7;
+}
+
+.achievement-item.fail {
+  background: #FEF2F2;
+  border-color: #FEE2E2;
+}
+
+.achievement-icon {
+  font-size: 24px;
+  margin-right: 12px;
+  line-height: 1;
+}
+
+.achievement-content {
+  flex: 1;
+}
+
+.achievement-text {
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.achievement-meta {
+  color: #9CA3AF;
+}
+
+.add-achievement-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  background: transparent;
+  border: 1px dashed #CBD5E1;
+  border-radius: 12px;
+  width: 100%;
+}
+
+.add-icon {
+  font-size: 16px;
+}
+
+/* 评论区 */
+.comments-section {
+  margin-bottom: 100px;
+}
+
+/* 弹幕价格提示 */
+.danmaku-price {
+  margin-top: 8px;
+  color: #9CA3AF;
+  font-size: 12px;
+}
+
+/* 弹幕层 */
+.danmaku-layer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* 弹窗 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  padding: 20px;
+}
+
+.modal-content {
+  width: 100%;
+  max-width: 320px;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.modal-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  color: #6B7280;
+  padding: 0;
+  line-height: 1;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.achievement-textarea {
+  width: 100%;
+  height: 120px;
+  padding: 12px;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  background: #F9FAFB;
+  font-size: 14px;
+}
+
+.modal-btn {
+  width: 100%;
+}

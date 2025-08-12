@@ -1,0 +1,300 @@
+/* pages/create/create.wxss */
+.container {
+  min-height: 100vh;
+  background: #F7F8FA;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx;
+  background: #ffffff;
+  border-bottom: 1px solid #eaeef3;
+}
+
+.back-btn {
+  width: 64rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f7fa;
+  border-radius: 50%;
+}
+
+.back-icon {
+  font-size: 32rpx;
+  color: #333;
+}
+
+.header-title {
+  font-size: 36rpx;
+  font-weight: 500;
+  color: #000;
+}
+
+.header-right {
+  width: 64rpx;
+}
+
+.content {
+  padding-top: 16px;
+  padding-bottom: 40px;
+}
+
+/* 卡片标题 */
+.card-header {
+  margin-bottom: 24px;
+}
+
+.card-title {
+  margin-bottom: 4px;
+}
+
+/* 表单部分 */
+.form-section {
+  margin-bottom: 24px;
+}
+
+.section-label {
+  display: block;
+  margin-bottom: 12px;
+}
+
+/* 头像上传 */
+.avatar-preview {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  overflow: hidden;
+  position: relative;
+}
+
+.avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.upload-placeholder {
+  width: 100%;
+  height: 100%;
+  border: 2px dashed #CBD5E1;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #F9FAFB;
+}
+
+.upload-icon {
+  font-size: 32px;
+  color: #9CA3AF;
+}
+
+.avatar-confirmed-tag {
+  position: absolute;
+  top: 90px;
+  right: 90px;
+  background: #10B981;
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+}
+
+.confirmed-icon {
+  font-size: 14px;
+}
+
+/* 上传方式按钮 */
+.upload-methods-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin: 16px 0;
+}
+
+.upload-methods {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  width: 96%;
+}
+
+.upload-method-btn {
+  flex: 1;
+  max-width: 85px;
+  min-width: 55px;
+  height: 58px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border: 1px solid #E5E7EB;
+}
+
+.upload-method-btn.active {
+  border: 2px solid #10B981;
+  background: #F0FDFA;
+}
+
+.method-icon {
+  font-size: 22px;
+  margin-bottom: 4px;
+}
+
+.method-text {
+  color: #6B7280;
+  font-size: 12px;
+}
+
+/* 上传按钮 */
+.upload-btn {
+  margin-top: 16px;
+  width: 60%;
+}
+
+/* 预览操作按钮 */
+.preview-actions {
+  width: 100%;
+}
+
+.action-btn {
+  flex: 1;
+}
+
+.upload-tip {
+  display: block;
+  color: #9CA3AF;
+  line-height: 1.4;
+}
+
+/* 昵称输入 */
+.nickname-input {
+  margin-bottom: 8px;
+}
+
+.input-tip {
+  display: block;
+  color: #9CA3AF;
+}
+
+/* 提交按钮 */
+.submit-btn {
+  width: 100%;
+  margin-top: 32px;
+}
+
+.submit-btn[disabled] {
+  background: #9CA3AF;
+  color: #F3F4F6;
+}
+
+/* 友情提醒区域 */
+.info-box {
+  margin-top: 24px;
+  background: #FEFBEB;
+  border: 1px solid #FDE68A;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.info-header {
+  margin-bottom: 12px;
+}
+
+.info-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #F59E0B;
+  margin-right: 8px;
+}
+
+.info-title {
+  font-size: 16px;
+  color: #92400E;
+}
+
+.info-item {
+  margin-bottom: 8px;
+}
+
+.info-text {
+  color: #92400E;
+  line-height: 1.5;
+} 
+
+/* 视频预览 */
+.avatar-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+/* 处理进度条样式 */
+.processing-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.processing-progress {
+  width: 80%;
+  text-align: center;
+}
+
+.progress-bar {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #10B981;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  color: white;
+  font-size: 12px;
+}
+
+/* 移除头像按钮 */
+.remove-avatar-btn {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #EF4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 18px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+} 

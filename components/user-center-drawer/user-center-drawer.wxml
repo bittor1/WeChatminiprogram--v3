@@ -1,0 +1,74 @@
+<!-- 遮罩层 -->
+<view class="drawer-mask {{visible ? 'visible' : ''}}" bindtap="onMaskTap" style="z-index: 999;"></view>
+
+<!-- 抽屉面板 -->
+<view class="drawer-container {{visible ? 'visible' : ''}}" style="transform: translateX({{visible ? '0' : '100%'}});" catchall bindtap="stopPropagation">
+  <!-- 关闭按钮 -->
+  <view class="close-btn" catchtap="onClose">×</view>
+  
+  <!-- 用户信息区域 -->
+  <view class="user-info-section" catchtap="handleMenuItemTap">
+    <view class="user-avatar-container" data-action="profile" catchtap="navigateToProfile">
+      <image class="user-avatar" src="{{userInfo.avatar || '/public/placeholder-user.jpg'}}" mode="aspectFill"></image>
+    </view>
+    <view class="user-details" data-action="profile" catchtap="navigateToProfile">
+      <text class="user-name">{{userInfo.name || '未登录用户'}}</text>
+      <text class="user-status">{{userInfo.votes || 0}} 人想吃</text>
+    </view>
+    <view class="profile-link" data-action="profile" catchtap="navigateToProfile">
+      <text class="link-text">查看我的主页</text>
+      <text class="link-arrow">></text>
+    </view>
+  </view>
+
+  <!-- 功能列表分组1 -->
+  <view class="menu-group" catchtap="handleMenuItemTap">
+    <view class="menu-item" data-action="orders" catchtap="navigateToOrders">
+      <view class="menu-icon">📋</view>
+      <text class="menu-text">我的订单</text>
+      <view class="menu-arrow">></view>
+    </view>
+    <view class="menu-item" data-action="nominations" catchtap="navigateToNominations">
+      <view class="menu-icon">🏆</view>
+      <text class="menu-text">我的提名</text>
+      <view class="menu-arrow">></view>
+    </view>
+    <view class="menu-item" data-action="votes" catchtap="navigateToVotes">
+      <view class="menu-icon">👍</view>
+      <text class="menu-text">我的投票记录</text>
+      <view class="menu-arrow">></view>
+    </view>
+  </view>
+
+  <!-- 功能列表分组2 -->
+  <view class="menu-group" catchtap="handleMenuItemTap">
+    <view class="menu-item" data-action="sound" catchtap="navigateToSoundSettings">
+      <view class="menu-icon">🔊</view>
+      <text class="menu-text">音效设置</text>
+      <view class="menu-arrow">></view>
+    </view>
+    <view class="menu-item" data-action="about" catchtap="navigateToAbout">
+      <view class="menu-icon">ℹ️</view>
+      <text class="menu-text">关于榜单</text>
+      <view class="menu-arrow">></view>
+    </view>
+  </view>
+
+  <!-- 退出登录 -->
+  <view class="logout-section">
+    <button class="logout-btn" catchtap="logout">退出登录</button>
+  </view>
+  
+  <!-- 调试信息区域 -->
+  <view class="debug-panel" wx:if="{{debugMessages.length > 0}}">
+    <text class="debug-title">调试信息:</text>
+    <view class="debug-logs">
+      <text class="debug-log" wx:for="{{debugMessages}}" wx:key="index">{{item}}</text>
+    </view>
+  </view>
+</view>
+
+<!-- 调试状态指示器 -->
+<view class="debug-indicator {{visible ? 'active' : ''}}" wx:if="{{show && !visible}}">
+  <text>抽屉显示中问题</text>
+</view> 

@@ -1,0 +1,106 @@
+/* pages/about/about.wxss */
+.container {
+  min-height: 100vh;
+  background: #F7F8FA;
+}
+
+.content {
+  padding-top: 16px;
+  padding-bottom: 40px;
+}
+
+/* 应用标识 */
+.app-identity {
+  margin-top: 32px;
+  margin-bottom: 40px;
+}
+
+.app-logo {
+  width: 72px;
+  height: 72px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #F87171, #FB7185);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.logo-icon {
+  font-size: 36px;
+}
+
+.app-name {
+  margin-bottom: 4px;
+}
+
+.app-tagline {
+  color: #6B7280;
+}
+
+/* 关于说明 */
+.section-header {
+  margin-bottom: 20px;
+}
+
+.header-emoji {
+  font-size: 20px;
+  margin-right: 8px;
+}
+
+.about-text {
+  display: block;
+  line-height: 1.6;
+}
+
+.about-text.mt-16 {
+  margin-top: 16px;
+}
+
+/* 提示框 */
+.info-box {
+  background: #FEFBEB;
+  border: 1px solid #FDE68A;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 24px;
+}
+
+.info-item {
+  margin-bottom: 12px;
+}
+
+.info-item:last-child {
+  margin-bottom: 0;
+}
+
+.info-text {
+  color: #92400E;
+  line-height: 1.5;
+}
+
+/* 二维码 */
+.qrcode-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.qrcode-container {
+  background: #F8FAFC;
+  border-radius: 16px;
+  margin-bottom: 16px;
+}
+
+.qrcode-image {
+  width: 200px;
+  height: 200px;
+}
+
+.qrcode-text {
+  margin-bottom: 4px;
+}
+
+.developer-credit {
+  color: #9CA3AF;
+} 

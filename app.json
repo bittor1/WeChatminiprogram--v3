@@ -1,0 +1,20 @@
+{
+    "pages": [
+      "pages/index/index",
+      "pages/detail/detail",
+      "pages/create/create",
+      "pages/about/about",
+      "pages/orders/orders"
+    ],
+    "window": {
+      "backgroundTextStyle": "light",
+      "navigationBarBackgroundColor": "#ffffff",
+      "navigationBarTitleText": "伦敦必吃榜",
+      "navigationBarTextStyle": "black",
+      "backgroundColor": "#f8fafc"
+    },
+    "style": "v2",
+    "sitemapLocation": "sitemap.json",
+    "lazyCodeLoading": "requiredComponents",
+    "cloud": true
+  }
