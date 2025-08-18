@@ -1,91 +1,66 @@
 // pages/orders/orders.js
 Page({
+
   /**
    * 页面的初始数据
    */
   data: {
-    orders: [],
-    hasOrders: true,
-    loading: true
+
   },
 
   /**
    * 生命周期函数--监听页面加载
    */
-  onLoad: function (options) {
-    this.fetchOrderData();
+  onLoad(options) {
+
+  },
+
+  /**
+   * 生命周期函数--监听页面初次渲染完成
+   */
+  onReady() {
+
   },
 
   /**
    * 生命周期函数--监听页面显示
    */
-  onShow: function () {
-    // 如果已经加载过数据则不重新加载
-    if (this.data.loading) {
-      this.fetchOrderData();
-    }
+  onShow() {
+
   },
 
   /**
-   * 获取订单数据
+   * 生命周期函数--监听页面隐藏
    */
-  fetchOrderData: function () {
-    this.setData({
-      loading: true
-    });
-    
-    // 获取全局应用实例
-    const app = getApp();
-    
-    // 获取当前用户信息
-    const userInfo = wx.getStorageSync('userInfo') || {};
-    const userId = userInfo.id || 'default_user';
-    
-    // 从全局方法获取订单数据
-    app.getUserOrders(userId).then(orders => {
-      this.setData({
-        orders,
-        hasOrders: orders.length > 0,
-        loading: false
-      });
-    }).catch(err => {
-      console.error('获取订单数据失败:', err);
-      this.setData({
-        loading: false,
-        hasOrders: false
-      });
-      
-      wx.showToast({
-        title: '获取订单失败',
-        icon: 'none'
-      });
-    });
+  onHide() {
+
   },
 
   /**
-   * 查看订单详情
+   * 生命周期函数--监听页面卸载
    */
-  viewOrderDetail: function (e) {
-    const id = e.currentTarget.dataset.id;
-    
-    wx.showToast({
-      title: '功能开发中',
-      icon: 'none'
-    });
+  onUnload() {
+
   },
 
   /**
-   * 返回上一页
+   * 页面相关事件处理函数--监听用户下拉动作
    */
-  goBack: function () {
-    wx.navigateBack();
+  onPullDownRefresh() {
+
   },
-  
+
   /**
-   * 下拉刷新
+   * 页面上拉触底事件的处理函数
    */
-  onPullDownRefresh: function () {
-    this.fetchOrderData();
-    wx.stopPullDownRefresh();
+  onReachBottom() {
+
+  },
+
+  /**
+   * 用户点击右上角分享
+   */
+  onShareAppMessage() {
+
   }
-}) 
+})

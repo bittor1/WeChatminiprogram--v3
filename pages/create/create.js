@@ -12,11 +12,20 @@ Page({
     fileType: '',         // 文件类型: image, video
     isProcessing: false,  // 是否正在处理文件
     processingProgress: 0, // 处理进度
-    showProgress: false   // 是否显示进度条
+    showProgress: false,   // 是否显示进度条
+    isFormValid: false    // 表单是否有效
   },
 
   onLoad() {
     // 页面加载时的逻辑
+    
+    // 启用分享菜单（包括朋友圈）
+    if (wx.canIUse('showShareMenu')) {
+      wx.showShareMenu({
+        withShareTicket: true,
+        menus: ['shareAppMessage', 'shareTimeline']
+      });
+    }
   },
 
   // 返回首页
@@ -165,6 +174,33 @@ Page({
     });
   },
 
+  // 监听昵称输入
+  onNicknameInput(e) {
+    const nickname = e.detail.value;
+    this.setData({
+      nickname: nickname
+    });
+    
+    // 检查表单状态
+    this.checkFormValidity();
+  },
+
+  // 检查表单有效性
+  checkFormValidity() {
+    const { nickname, avatar } = this.data;
+    const isValid = nickname && nickname.trim().length > 0 && avatar;
+    
+    this.setData({
+      isFormValid: isValid
+    });
+    
+    console.log('表单状态检查:', {
+      nickname: nickname,
+      avatar: avatar,
+      isFormValid: isValid
+    });
+  },
+
   // 确认预览头像
   confirmPreview() {
     const { fileType, tempFilePath } = this.data;
@@ -179,6 +215,9 @@ Page({
         previewConfirmed: true
       });
       
+      // 检查表单状态
+      this.checkFormValidity();
+      
       wx.showToast({
         title: '头像已确认',
         icon: 'success'
@@ -191,8 +230,8 @@ Page({
     // 显示加载状态
     this.setData({
       isProcessing: true,
-      processingProgress: 0,
-      showProgress: true
+      showProgress: true,
+      processingProgress: 0
     });
     
     wx.showLoading({
@@ -202,9 +241,8 @@ Page({
     
     // 模拟进度更新
     this.updateProgressInterval = setInterval(() => {
-      let progress = this.data.processingProgress;
-      if (progress < 90) {
-        progress += Math.floor(Math.random() * 10) + 1;
+      if (this.data.processingProgress < 90) {
+        const progress = this.data.processingProgress + Math.floor(Math.random() * 10) + 1;
         this.setData({
           processingProgress: Math.min(progress, 90)
         });
@@ -214,55 +252,86 @@ Page({
     // 上传视频到云存储
     const cloudPath = `videos/${Date.now()}.mp4`;
     
-    cloudUtils.uploadFileToCloud(videoPath, cloudPath)
-      .then(fileID => {
+    wx.cloud.uploadFile({
+      cloudPath: cloudPath,
+      filePath: videoPath,
+      success: fileID => {
         console.log('视频上传成功:', fileID);
         
         // 调用云函数进行转换
-        return cloudUtils.convertVideoToGif(fileID, {
-          width: 200,
-          height: 200,
-          duration: 5,
-          fps: 10
+        wx.cloud.callFunction({
+          name: 'videoToGif',
+          data: {
+            fileID: fileID,
+            options: {
+              width: 200,
+              height: 200,
+              duration: 5,
+              fps: 10
+            }
+          }
+        })
+        .then(res => {
+          console.log('GIF转换成功:', res);
+          
+          // 获取GIF文件ID
+          const gifFileID = res.result && res.result.fileID;
+          if (!gifFileID) {
+            throw new Error('未获取到GIF文件ID');
+          }
+          
+          // 下载GIF到本地临时文件
+          return wx.cloud.downloadFile({
+            fileID: gifFileID
+          });
+        })
+        .then(res => {
+          const gifFilePath = res.tempFilePath;
+          
+          // 清除进度更新定时器
+          clearInterval(this.updateProgressInterval);
+          
+          // 更新头像
+          this.setData({
+            avatar: gifFilePath,
+            previewImage: gifFilePath,
+            previewConfirmed: true,
+            isProcessing: false,
+            processingProgress: 100,
+            showProgress: false
+          });
+          
+          // 检查表单状态
+          this.checkFormValidity();
+          
+          wx.hideLoading();
+          wx.showToast({
+            title: 'GIF生成成功',
+            icon: 'success'
+          });
+        })
+        .catch(err => {
+          console.error('处理失败:', err);
+          this.handleProcessingError();
         });
-      })
-      .then(gifFileID => {
-        console.log('GIF转换成功:', gifFileID);
-        // 下载GIF到本地临时文件
-        return cloudUtils.downloadFileFromCloud(gifFileID);
-      })
-      .then(gifFilePath => {
-        clearInterval(this.updateProgressInterval);
-        
-        // 更新头像
-        this.setData({
-          avatar: gifFilePath,
-          previewImage: gifFilePath,
-          previewConfirmed: true,
-          isProcessing: false,
-          processingProgress: 100,
-          showProgress: false
-        });
-        
-        wx.hideLoading();
-        wx.showToast({
-          title: 'GIF生成成功',
-          icon: 'success'
-        });
-      })
-      .catch(err => {
-        console.error('处理失败:', err);
+      },
+      fail: err => {
+        console.error('视频上传失败:', err);
         this.handleProcessingError();
-      });
+      }
+    });
   },
 
-  // 处理错误
+  // 处理视频处理错误
   handleProcessingError() {
+    // 清除进度更新定时器
     clearInterval(this.updateProgressInterval);
     
+    // 重置状态
     this.setData({
       isProcessing: false,
-      showProgress: false
+      showProgress: false,
+      processingProgress: 0
     });
     
     wx.hideLoading();
@@ -293,16 +362,16 @@ Page({
     });
   },
 
-  // 监听昵称输入
-  onNicknameInput(e) {
-    this.setData({
-      nickname: e.detail.value
-    });
-  },
-
   // 提交表单
   handleSubmit() {
-    if (!this.data.nickname.trim()) {
+    console.log('提交按钮被点击');
+    console.log('当前数据状态:', {
+      nickname: this.data.nickname,
+      avatar: this.data.avatar,
+      previewConfirmed: this.data.previewConfirmed
+    });
+
+    if (!this.data.nickname || this.data.nickname.trim() === '') {
       wx.showToast({
         title: '请输入昵称',
         icon: 'none'
@@ -324,52 +393,103 @@ Page({
       mask: true
     });
     
+    console.log('开始上传头像:', this.data.avatar);
+    
     // 上传头像到云存储
     const avatarCloudPath = `avatars/${Date.now()}.${this.data.fileType === 'video' ? 'gif' : 'png'}`;
     
-    cloudUtils.uploadFileToCloud(this.data.avatar, avatarCloudPath)
-      .then(fileID => {
+    wx.cloud.uploadFile({
+      cloudPath: avatarCloudPath,
+      filePath: this.data.avatar,
+      success: res => {
+        const fileID = res.fileID;
         console.log('头像上传成功:', fileID);
         
+        const currentUser = wx.getStorageSync('userInfo') || {};
         // 保存数据到数据库
-        return cloudUtils.saveNominationToDb({
-          name: this.data.nickname,
-          avatarUrl: fileID,
-          isGif: this.data.fileType === 'video',
-          votes: 0,
-          trend: 'stable',
-          hotLevel: 1,
-          createdAt: wx.cloud.database().serverDate(),
-          _createTime: new Date().getTime()
-        });
-      })
-      .then(id => {
-        console.log('数据保存成功:', id);
-        
-        // 刷新首页数据
-        getApp().refreshRankingData();
-        
-        wx.hideLoading();
-        wx.showToast({
-          title: '提交成功',
-          icon: 'success'
-        });
-        
-        // 延迟后返回首页
-        setTimeout(() => {
-          wx.reLaunch({
-            url: '/pages/index/index'
+        wx.cloud.callFunction({
+          name: 'nominationManage',
+          data: {
+            action: 'createNomination',
+            nominationData: {
+              name: this.data.nickname,
+              avatarUrl: fileID,
+              isGif: this.data.fileType === 'video',
+              votes: 0,
+              trend: 'stable',
+              hotLevel: 1,
+              creatorId: currentUser.id || 'current_user',
+              createdAt: wx.cloud.database().serverDate(),
+              _createTime: new Date().getTime()
+            }
+          }
+        })
+        .then(res => {
+          console.log('数据保存成功:', res);
+          
+          if (!res.result || !res.result.success) {
+            throw new Error(res.result ? res.result.message : '保存失败');
+          }
+          
+          // 刷新首页数据
+          getApp().refreshRankingData();
+          
+          wx.hideLoading();
+          wx.showToast({
+            title: '提交成功',
+            icon: 'success'
           });
-        }, 1500);
-      })
-      .catch(err => {
-        console.error('提交失败:', err);
+          
+          // 延迟后返回首页
+          setTimeout(() => {
+            wx.reLaunch({
+              url: '/pages/index/index'
+            });
+          }, 1500);
+        })
+        .catch(err => {
+          console.error('保存数据失败:', err);
+          wx.hideLoading();
+          wx.showToast({
+            title: '保存失败: ' + (err.message || '未知错误'),
+            icon: 'none'
+          });
+        });
+      },
+      fail: err => {
+        console.error('头像上传失败:', err);
         wx.hideLoading();
         wx.showToast({
-          title: '提交失败',
+          title: '头像上传失败',
           icon: 'none'
         });
-      });
+      }
+    });
+  },
+
+  // 分享到好友
+  onShareAppMessage() {
+    // 构建更吸引人的分享标题
+    const title = '快来提名你心目中的伦敦必吃人物！';
+    const path = '/pages/create/create';
+    
+    return {
+      title: title,
+      path: path,
+      imageUrl: '/public/placeholder.jpg' // 使用项目中的默认图片
+    };
+  },
+  
+  // 分享到朋友圈
+  onShareTimeline() {
+    // 为朋友圈创建吸引人的标题
+    const title = '伦敦必吃榜 - 快来提名你心目中的人气王！';
+    
+    return {
+      title: title,
+      query: '',
+      imageUrl: '/public/placeholder.jpg' // 使用项目中的默认图片
+    };
   },
 
   // 组件销毁时清除定时器

@@ -1,0 +1,160 @@
+/* pages/report-deed/report-deed.wxss */
+.container {
+  min-height: 100vh;
+  background-color: #F7F8FA;
+  padding-bottom: 120rpx; /* 为底部按钮留出空间 */
+}
+
+/* 头部样式 */
+.header {
+  padding: 40rpx 40rpx 20rpx;
+  background-color: #FFFFFF;
+  text-align: center;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+  margin-bottom: 24rpx;
+}
+
+.header-title {
+  font-size: 48rpx;
+  font-weight: 700;
+  color: #1F2937;
+  margin-bottom: 12rpx;
+  display: block;
+}
+
+.header-subtitle {
+  font-size: 28rpx;
+  color: #6B7280;
+  display: block;
+}
+
+/* 表单容器 */
+.form-container {
+  padding: 32rpx;
+}
+
+/* 表单组 */
+.form-group {
+  margin-bottom: 32rpx;
+}
+
+.form-label {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #1F2937;
+  margin-bottom: 16rpx;
+}
+
+/* 选择器样式 */
+.picker {
+  background-color: #FFFFFF;
+  border-radius: 999rpx; /* 胶囊形状 */
+  padding: 24rpx 32rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.picker-value {
+  color: #374151;
+  font-size: 28rpx;
+}
+
+.picker-arrow {
+  color: #9CA3AF;
+  font-size: 24rpx;
+}
+
+/* 文本域样式 */
+.content-textarea {
+  background-color: #FFFFFF;
+  border-radius: 24rpx;
+  padding: 24rpx;
+  width: 100%;
+  height: 240rpx;
+  box-sizing: border-box;
+  font-size: 28rpx;
+  color: #374151;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.character-count {
+  text-align: right;
+  font-size: 24rpx;
+  color: #9CA3AF;
+  margin-top: 8rpx;
+}
+
+/* 输入框样式 */
+.location-input {
+  background-color: #FFFFFF;
+  border-radius: 999rpx; /* 胶囊形状 */
+  padding: 24rpx 32rpx;
+  font-size: 28rpx;
+  color: #374151;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+/* 单选组样式 */
+.type-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24rpx;
+}
+
+.type-item {
+  display: flex;
+  align-items: center;
+  background-color: #FFFFFF;
+  border-radius: 999rpx; /* 胶囊形状 */
+  padding: 16rpx 24rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.type-label {
+  font-size: 28rpx;
+  color: #374151;
+  margin-left: 8rpx;
+}
+
+/* 底部操作区 */
+.action-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 24rpx 32rpx;
+  background-color: #FFFFFF;
+  box-shadow: 0 -4rpx 12rpx rgba(0, 0, 0, 0.05);
+  z-index: 100;
+  display: flex;
+  justify-content: space-between;
+  gap: 24rpx;
+}
+
+.cancel-button, .submit-button {
+  flex: 1;
+  padding: 20rpx 0;
+  font-size: 32rpx;
+  font-weight: 600;
+  border-radius: 999rpx; /* 胶囊形状 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cancel-button {
+  background-color: #F3F4F6;
+  color: #4B5563;
+}
+
+.submit-button {
+  background-color: #10B981;
+  color: #FFFFFF;
+}
+
+.submit-button[disabled] {
+  background-color: #D1D5DB;
+  color: #9CA3AF;
+} 

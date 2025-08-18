@@ -1,39 +1,175 @@
 // pages/index/index.js
+const cloudUtils = require('../../utils/cloudUtils');
+
 Page({
   data: {
     rankings: [],
     totalVotes: 0,
+    totalNominations: 0,
+    totalUsers: 0,
+    voteGrowthRate: 0,
     showUserCenter: false,
-    userInfo: null
+    userInfo: null,
+    isLoading: true,
+    loadError: false,
+    drawerTopOffset: 40,
+    shareSupport: {
+      canShareTimeline: false,
+      canShowShareMenu: false
+    }
   },
 
   onLoad() {
+    this.authDialog = this.selectComponent("#authDialog");
+    // 首次加载时强制刷新数据，而不是使用可能为空的缓存数据
+    this.refreshData();
+    
+    // 使用辅助函数启用分享菜单
+    const shareSupport = cloudUtils.enableShareMenu();
+    this.setData({ shareSupport });
+  },
+  
+  onShow() {
+    // 页面显示时检查是否有数据，如果没有则刷新
+    if (!this.data.rankings || this.data.rankings.length === 0) {
+      this.refreshData();
+    } else {
+      // 否则使用常规加载
+      this.loadData();
+    }
+  },
+
+  // 加载数据
+  loadData() {
+    this.setData({ isLoading: true, loadError: false });
+    wx.showLoading({ title: '加载中...', mask: true });
+
     // 获取app全局数据
     const app = getApp();
     const rankings = app.globalData.rankings || [];
     
+    // 如果rankings为空，则强制刷新数据
+    if (!rankings || rankings.length === 0) {
+      wx.hideLoading();
+      this.refreshData();
+      return;
+    }
+    
     // 计算总投票数
     const totalVotes = this.calculateTotalVotes(rankings);
     
-    // 获取用户信息
-    const userInfo = wx.getStorageSync('userInfo') || null;
+    // 计算超过百人想吃的人数
+    const totalPopular = this.calculatePopularUsers(rankings);
     
-    // 更新数据
+    // 更新数据 - 不再自动加载用户信息
     this.setData({
       rankings,
       totalVotes,
-      userInfo
+      totalUsers: totalPopular, // 更新为超过百人想吃的人数
+      isLoading: false
+    });
+    
+    wx.hideLoading();
+  },
+
+  // 加载统计数据
+  loadStatistics() {
+    wx.cloud.callFunction({
+      name: 'statistics',
+      data: {
+        action: 'getDashboardStats'
+      }
+    })
+    .then(res => {
+      if (res.result && res.result.success) {
+        const stats = res.result.data;
+        this.setData({
+          // 不从云函数获取totalVotes，而是使用本地计算的值
+          // totalVotes: stats.totalVotes,
+          totalNominations: stats.nominationsCount,
+          // 不从云函数获取totalUsers，我们现在使用计算的超过百人想吃数
+          // totalUsers: stats.totalUsers,
+          voteGrowthRate: stats.voteGrowthRate
+        });
+      } else {
+        console.warn('获取统计数据返回异常:', res);
+      }
+    })
+    .catch(err => {
+      console.error('加载统计数据失败:', err);
+      wx.showToast({
+        title: '统计数据加载失败',
+        icon: 'none'
+      });
     });
   },
-  
-  onShow() {
-    // 页面显示时刷新数据
-    this.onLoad();
+
+  // 刷新数据
+  refreshData() {
+    const app = getApp();
+    this.setData({ isLoading: true, loadError: false });
+    wx.showLoading({ title: '刷新中...', mask: true });
+
+    // 刷新排行榜数据
+    app.refreshRankingData()
+      .then((rankings) => {
+        // 确保rankings是有效的数组
+        const validRankings = Array.isArray(rankings) ? rankings : app.globalData.rankings || [];
+        
+        // 计算总投票数
+        const totalVotes = this.calculateTotalVotes(validRankings);
+        
+        // 计算超过百人想吃的人数
+        const totalPopular = this.calculatePopularUsers(validRankings);
+        
+        this.setData({
+          rankings: validRankings,
+          totalVotes: totalVotes, // 明确设置计算出的总投票数
+          totalUsers: totalPopular, // 更新为超过百人想吃的人数
+          isLoading: false
+        });
+
+        // 刷新统计数据
+        this.loadStatistics();
+        
+        wx.hideLoading();
+      })
+      .catch(err => {
+        console.error('刷新数据失败:', err);
+        
+        // 出错时仍然显示全局数据
+        const rankings = app.globalData.rankings || [];
+        
+        // 确保即使出错也更新总投票数
+        const totalVotes = this.calculateTotalVotes(rankings);
+        
+        // 计算超过百人想吃的人数
+        const totalPopular = this.calculatePopularUsers(rankings);
+        
+        this.setData({
+          rankings,
+          totalVotes: totalVotes, // 明确设置计算出的总投票数
+          totalUsers: totalPopular, // 更新为超过百人想吃的人数
+          isLoading: false,
+          loadError: true // 显示错误状态
+        });
+        
+        wx.hideLoading();
+        wx.showToast({
+          title: '刷新数据失败',
+          icon: 'none'
+        });
+      });
   },
   
   // 计算总投票数
   calculateTotalVotes(rankings) {
     return rankings.reduce((total, item) => total + item.votes, 0);
+  },
+  
+  // 计算超过百人想吃的人数
+  calculatePopularUsers(rankings) {
+    return rankings.filter(item => item.votes >= 100).length;
   },
   
   // 跳转到详情页
@@ -51,6 +187,13 @@ Page({
     });
   },
   
+  // 跳转到添加页
+  goToAdd() {
+    wx.navigateTo({
+      url: '/pages/add/add'
+    });
+  },
+  
   // 跳转到关于页
   goToAbout() {
     wx.navigateTo({
@@ -65,104 +208,128 @@ Page({
       e.stopPropagation();
     }
     
-    // 记录抽屉打开时间，用于防止快速关闭
-    this._drawerOpenTime = Date.now();
-    
-    // 添加一个短暂的视觉反馈
-    wx.vibrateShort({
-      type: 'medium'
-    });
-    
-    // 打印详细日志
-    console.log('尝试打开用户中心 - 详细信息:', {
-      event: e,
-      timestamp: new Date().toISOString(),
-      userInfo: this.data.userInfo ? '已登录' : '未登录'
-    });
+    // 如果抽屉已经显示，则不再重复打开
+    if (this.data.showUserCenter) {
+      return;
+    }
 
-    // 如果用户未登录，则获取微信用户信息
-    if (!this.data.userInfo) {
-      wx.showLoading({
-        title: '加载中...',
-      });
-      
-      // 获取微信用户信息
-      wx.getUserProfile({
-        desc: '用于完善用户资料',
-        success: (res) => {
-          wx.hideLoading();
+    const app = getApp();
+
+    // 定义打开抽屉的具体操作
+    const openDrawerAction = () => {
+      // 测量标题位置，用于抽屉顶部对齐
+      const query = wx.createSelectorQuery();
+      query.select('.main-title').boundingClientRect();
+      query.exec(res => {
+        const rect = res && res[0];
+        const topOffset = rect ? Math.max(0, Math.floor(rect.top)) : 40;
+        
+        // 设置抽屉顶部偏移，然后显示抽屉
+        this.setData({ drawerTopOffset: topOffset }, () => {
+          // 记录抽屉打开时间，用于防止快速关闭
+          this._drawerOpenTime = Date.now();
           
-          const userInfo = {
-            id: "current_user",
-            name: res.userInfo.nickName,
-            avatar: res.userInfo.avatarUrl,
-            votes: 0
-          };
+          // 从缓存中获取最新的用户信息
+          const storedUserInfo = wx.getStorageSync('userInfo');
           
-          wx.setStorageSync('userInfo', userInfo);
-          
-          // 确保界面更新后再打开抽屉
-          this.setData({
-            userInfo: userInfo
-          }, () => {
-            // 在回调中设置显示抽屉
-            this.setData({
-              showUserCenter: true
-            });
-            
-            console.log('用户中心已打开', this.data.showUserCenter);
+          this.setData({ 
+            showUserCenter: true,
+            userInfo: storedUserInfo || null
           });
-        },
-        fail: (err) => {
-          wx.hideLoading();
-          console.error('获取用户信息失败:', err);
-          
-          // 使用默认用户信息
-          const mockUserInfo = {
-            id: "current_user",
-            name: "当前用户",
-            avatar: "/public/placeholder-user.jpg",
-            votes: 0
-          };
-          
-          wx.setStorageSync('userInfo', mockUserInfo);
-          
-          // 确保界面更新后再打开抽屉
-          this.setData({
-            userInfo: mockUserInfo
-          }, () => {
-            // 在回调中设置显示抽屉
-            this.setData({
-              showUserCenter: true
-            });
-            console.log('用户中心已打开（使用默认用户）', this.data.showUserCenter);
-          });
-        }
+        });
       });
+    };
+
+    // 检查是否已登录 (现在我们检查token)
+    if (app.checkUserLogin()) {
+      // 如果已登录，直接打开抽屉
+      openDrawerAction();
     } else {
-      // 已登录用户，直接打开抽屉
-      this.setData({
-        showUserCenter: true
-      });
+      // 检查是否已经拒绝过授权
+      const authFailed = wx.getStorageSync('authFailed');
       
-      console.log('用户中心已打开（已登录用户）', this.data.showUserCenter);
+      // 如果之前拒绝过授权，先提示用户
+      if (authFailed) {
+        wx.showModal({
+          title: '需要授权',
+          content: '需要您的授权才能继续操作，是否重新授权？',
+          success: (res) => {
+            if (res.confirm) {
+              // 用户确认，显示登录弹窗
+              this.authDialog.showDialog({
+                success: (userInfo) => {
+                  console.log('授权登录成功:', userInfo);
+                  this.setData({ userInfo: userInfo });
+                  wx.setStorageSync('authFailed', false); // 重置授权状态
+                  openDrawerAction();
+                },
+                fail: (err) => {
+                  console.error('授权登录失败:', err);
+                  wx.setStorageSync('authFailed', true); // 记录失败状态
+                  wx.showToast({
+                    title: '需要授权才能继续',
+                    icon: 'none'
+                  });
+                }
+              });
+            }
+          }
+        });
+      } else {
+        // 首次请求授权，直接显示登录弹窗
+        this.authDialog.showDialog({
+          success: (userInfo) => {
+            console.log('授权登录成功:', userInfo);
+            this.setData({ userInfo: userInfo });
+            wx.setStorageSync('authFailed', false); // 记录成功状态
+            openDrawerAction();
+          },
+          fail: (err) => {
+            console.error('授权登录失败:', err);
+            wx.setStorageSync('authFailed', true); // 记录失败状态
+            wx.showToast({
+              title: '需要授权才能继续',
+              icon: 'none'
+            });
+          }
+        });
+      }
     }
   },
   
-  // 关闭用户中心抽屉
-  closeUserCenter() {
-    // 检查是否是快速关闭（防止意外关闭）
-    const now = Date.now();
-    if (this._drawerOpenTime && now - this._drawerOpenTime < 500) {
-      console.log('抽屉刚刚打开，忽略关闭请求');
-      return;
-    }
-    
-    this.setData({
-      showUserCenter: false
+  // 调用用户登录云函数
+  callUserLogin(userData) {
+    wx.cloud.callFunction({
+      name: 'userManage',
+      data: {
+        action: 'login',
+        userData
+      }
+    })
+    .then(res => {
+      console.log('用户登录成功:', res);
+      
+      // 更新本地存储的用户信息
+      if (res.result && res.result.success && res.result.data) {
+        const updatedUserInfo = res.result.data;
+        
+        // 合并返回的用户信息
+        const userInfo = {
+          ...this.data.userInfo,
+          id: updatedUserInfo._id,
+          votes: updatedUserInfo.votes || 0,
+          name: updatedUserInfo.name || this.data.userInfo.name,
+          avatar: updatedUserInfo.avatar || this.data.userInfo.avatar
+        };
+        
+        // 更新数据
+        wx.setStorageSync('userInfo', userInfo);
+        this.setData({ userInfo });
+      }
+    })
+    .catch(err => {
+      console.error('用户登录失败:', err);
     });
-    
-    console.log('用户中心已关闭');
   },
   
   // 处理用户退出登录
@@ -171,6 +338,103 @@ Page({
       userInfo: null
     });
     
-    console.log('用户已退出登录');
+    // 清除本地存储中的用户信息
+    wx.removeStorageSync('userInfo');
+    
+    // 关闭用户中心抽屉
+    this.closeUserCenter();
+  },
+
+  // 处理用户登录事件
+  handleUserLogin(e) {
+    const userInfo = e.detail.userInfo;
+    this.setData({ userInfo });
+  },
+
+  // 处理用户信息更新事件
+  handleUserInfoUpdate(e) {
+    const userInfo = e.detail.userInfo;
+    this.setData({ userInfo });
+  },
+
+  // 下拉刷新
+  onPullDownRefresh() {
+    this.refreshData();
+    wx.stopPullDownRefresh();
+  },
+  
+  // 用于分享到好友
+  onShareAppMessage() {
+    // 构建更吸引人的分享标题
+    const title = '伦敦必吃榜 - 来看看谁最受欢迎！';
+    const path = '/pages/index/index';
+    const imageUrl = 'public/placeholder.jpg'; // 使用项目中的默认图片
+    
+    return {
+      title: title,
+      path: path,
+      imageUrl: imageUrl
+    };
+  },
+
+  // 用于分享到朋友圈
+  onShareTimeline() {
+    // 为朋友圈创建吸引人的标题
+    const title = '伦敦必吃榜 - 来看看谁最受欢迎！';
+    const query = '';
+    const imageUrl = 'public/placeholder.jpg'; // 使用项目中的默认图片
+    
+    return {
+      title: title,
+      query: query,
+      imageUrl: imageUrl
+    };
+  },
+  
+  // 记录分享行为
+  recordShareAction(type) {
+    // 获取当前的分享平台信息
+    const platform = type === 'timeline' ? 'timeline' : 'wechat';
+    
+    // 获取合适的标题和路径
+    let title = '伦敦必吃榜';
+    const path = '/pages/index/index';
+    
+    if (type === 'timeline') {
+      title = '伦敦必吃榜 - 人气排行榜';
+    } else {
+      title = '伦敦必吃榜 - 寻找伦敦最佳美食';
+    }
+    
+    // 调用分享分析云函数
+    wx.cloud.callFunction({
+      name: 'shareAnalytics',
+      data: {
+        action: 'recordShare',
+        shareData: {
+          type: type,
+          platform: platform,
+          targetId: 'ranking_index',
+          title: title,
+          path: path
+        }
+      }
+    })
+    .catch(err => {
+      console.error('记录分享行为失败:', err);
+    });
+  },
+
+  // 关闭用户中心抽屉
+  closeUserCenter() {
+    // 检查是否是快速关闭（防止意外关闭）
+    const now = Date.now();
+    if (this._drawerOpenTime && now - this._drawerOpenTime < 300) {
+      return;
+    }
+    
+    this.setData({
+      showUserCenter: false
+    });
   }
 })

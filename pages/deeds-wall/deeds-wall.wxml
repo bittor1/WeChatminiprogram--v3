@@ -1,0 +1,33 @@
+<view class="container">
+  <view class="header">
+    <text class="header-title">战绩墙</text>
+    <text class="header-subtitle">记录精彩事迹，分享欢乐时刻</text>
+  </view>
+
+  <scroll-view scroll-y="true" class="deeds-container">
+    <block wx:for="{{ deedsList }}" wx:key="id">
+      <view class="deed-card">
+        <view class="card-header">
+          <image class="avatar" src="{{ item.avatarUrl }}" mode="aspectFill"></image>
+          <view class="user-info">
+            <text class="nickname">{{ item.nickname }}</text>
+            <text class="timestamp">{{ item.createTime }}</text>
+          </view>
+        </view>
+        <view class="card-body">
+          <text class="content">{{ item.content }}</text>
+        </view>
+        <view wx:if="{{ item.location }}" class="card-footer">
+          <view class="location">
+            <text class="location-icon">📍</text>
+            <text class="location-text">{{ item.location }}</text>
+          </view>
+        </view>
+      </view>
+    </block>
+  </scroll-view>
+
+  <view class="action-container">
+    <button class="report-button" bindtap="onReportNewDeed">爆料新事迹</button>
+  </view>
+</view> 

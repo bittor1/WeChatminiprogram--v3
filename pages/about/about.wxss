@@ -101,6 +101,11 @@
   margin-bottom: 4px;
 }
 
+.qrcode-tip {
+  color: #6B7280;
+  margin-bottom: 8px;
+}
+
 .developer-credit {
   color: #9CA3AF;
 } 

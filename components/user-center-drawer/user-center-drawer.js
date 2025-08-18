@@ -11,6 +11,10 @@ Component({
     userInfo: {
       type: Object,
       value: null
+    },
+    topOffset: {
+      type: Number,
+      value: 0
     }
   },
 
@@ -19,7 +23,11 @@ Component({
    */
   data: {
     visible: false,
-    debugMessages: []
+    activeSubDrawer: '', // 当前活跃的子抽屉: orders, nominations, messages, sounds, about
+    subDrawerVisible: false, // 子抽屉是否可见
+    unreadMessageCount: 0, // 未读消息数量
+    userStatistics: null, // 用户统计数据
+    isLoading: false
   },
 
   /**
@@ -28,20 +36,22 @@ Component({
   lifetimes: {
     attached() {
       // 组件被创建时执行
-      console.log('用户中心抽屉组件已创建');
-      this.debugLog('组件已创建');
     },
     ready() {
       // 组件挂载后执行
-      console.log('用户中心抽屉组件已挂载');
-      this.debugLog('组件已挂载');
       
       // 检查初始show属性值
       if (this.properties.show) {
-        console.log('初始化时，show属性为true，显示抽屉');
         this.setData({ visible: true });
-        this.debugLog('初始化时显示抽屉');
       }
+    },
+    detached() {
+      // 组件被移除时执行，确保清理所有状态
+      this.setData({
+        visible: false,
+        activeSubDrawer: '',
+        subDrawerVisible: false
+      });
     }
   },
 
@@ -50,21 +60,28 @@ Component({
    */
   observers: {
     'show': function(show) {
-      console.log('用户中心显示状态变更:', show);
-      this.debugLog(`显示状态变更: ${show}`);
-      
       if (show) {
-        console.log('显示抽屉');
         this.setData({
           visible: true
         });
-        this.debugLog('显示抽屉');
+        
+        // 当抽屉显示时，加载未读消息数量和用户统计
+        if (this.properties.userInfo) {
+          this.loadUnreadMessageCount();
+          this.loadUserStatistics();
+        }
       } else {
-        console.log('准备隐藏抽屉');
         // 确认当前是由父组件主动关闭，而不是内部事件触发的关闭
         if (!this._internalClosing) {
           this.hideDrawer();
         }
+      }
+    },
+    'userInfo': function(userInfo) {
+      // 当用户信息变化时，如果抽屉可见，重新加载未读消息和统计
+      if (userInfo && this.data.visible) {
+        this.loadUnreadMessageCount();
+        this.loadUserStatistics();
       }
     }
   },
@@ -73,24 +90,65 @@ Component({
    * 组件的方法列表
    */
   methods: {
-    // 添加调试日志
-    debugLog(message) {
-      const timestamp = new Date().toLocaleTimeString();
-      const debugMessages = this.data.debugMessages;
-      debugMessages.push(`${timestamp}: ${message}`);
-      if (debugMessages.length > 10) {
-        debugMessages.shift(); // 只保留最近10条日志
-      }
-      this.setData({ debugMessages });
+    // 加载未读消息数量
+    loadUnreadMessageCount() {
+      if (!this.properties.userInfo || this.data.isLoading) return;
+      
+      this.setData({ isLoading: true });
+      
+      wx.cloud.callFunction({
+        name: 'messageManage',
+        data: {
+          action: 'getUserMessages'
+        }
+      })
+      .then(res => {
+        if (res.result && res.result.success) {
+          this.setData({
+            unreadMessageCount: res.result.unreadCount || 0,
+            isLoading: false
+          });
+        } else {
+          this.setData({ isLoading: false });
+        }
+      })
+      .catch(err => {
+        console.error('获取未读消息失败:', err);
+        this.setData({ isLoading: false });
+      });
     },
     
-    // 隐藏抽屉
-    hideDrawer() {
-      console.log('隐藏抽屉');
-      this.debugLog('隐藏抽屉');
+    // 加载用户统计数据
+    loadUserStatistics() {
+      if (!this.properties.userInfo || this.data.isLoading) return;
       
+      wx.cloud.callFunction({
+        name: 'statistics',
+        data: {
+          action: 'getUserStats'
+        }
+      })
+      .then(res => {
+        if (res.result && res.result.success) {
+          this.setData({
+            userStatistics: res.result.data
+          });
+        }
+      })
+      .catch(err => {
+        console.error('获取用户统计数据失败:', err);
+      });
+    },
+    
+    // 隐藏主抽屉
+    hideDrawer() {
       // 设置内部关闭标志，防止观察者重复调用
       this._internalClosing = true;
+      
+      // 先隐藏子抽屉（如果有）
+      if (this.data.subDrawerVisible) {
+        this.hideSubDrawer();
+      }
       
       this.setData({
         visible: false
@@ -99,126 +157,99 @@ Component({
       // 延迟关闭抽屉
       setTimeout(() => {
         this.triggerEvent('close');
-        this.debugLog('触发close事件');
         
         // 重置内部关闭标志
         this._internalClosing = false;
+        
+        // 确保子抽屉相关状态被完全重置
+        this.setData({
+          activeSubDrawer: '',
+          subDrawerVisible: false
+        });
       }, 300);
     },
     
-    // 关闭抽屉
-    onClose() {
-      console.log('关闭按钮被点击');
-      this.debugLog('关闭按钮被点击');
-      this.hideDrawer();
+    // 显示子抽屉
+    showSubDrawer(e) {
+      const action = e.currentTarget.dataset.action;
+      
+      // 先重置所有子抽屉状态，确保不会有多个子抽屉同时显示
+      this.setData({
+        activeSubDrawer: '',
+        subDrawerVisible: false
+      });
+      
+      // 延迟一帧后设置新的活跃子抽屉，确保DOM有时间更新
+      setTimeout(() => {
+        this.setData({
+          activeSubDrawer: action,
+          subDrawerVisible: true
+        });
+        
+        // 如果是消息子抽屉，标记所有消息为已读
+        if (action === 'messages' && this.data.unreadMessageCount > 0) {
+          this.markAllMessagesAsRead();
+        }
+      }, 50);
+    },
+    
+    // 标记所有消息为已读
+    markAllMessagesAsRead() {
+      if (this.data.unreadMessageCount === 0) return;
+      
+      wx.cloud.callFunction({
+        name: 'messageManage',
+        data: {
+          action: 'markAllAsRead'
+        }
+      })
+      .then(res => {
+        if (res.result && res.result.success) {
+          this.setData({
+            unreadMessageCount: 0
+          });
+        }
+      })
+      .catch(err => {
+        console.error('标记所有消息已读失败:', err);
+      });
+    },
+    
+    // 隐藏子抽屉
+    hideSubDrawer() {
+      this.setData({
+        subDrawerVisible: false
+      });
+      
+      // 延迟清除活跃子抽屉，以便动画完成
+      setTimeout(() => {
+        if (!this.data.subDrawerVisible) {
+          this.setData({ activeSubDrawer: '' });
+        }
+      }, 300);
     },
     
     // 点击遮罩关闭抽屉
     onMaskTap() {
-      console.log('遮罩被点击');
-      this.debugLog('遮罩被点击');
-      this.hideDrawer();
+      // 如果子抽屉可见，则隐藏子抽屉，否则隐藏主抽屉
+      if (this.data.subDrawerVisible) {
+        this.hideSubDrawer();
+      } else {
+        this.hideDrawer();
+      }
     },
     
     // 阻止冒泡
     stopPropagation(e) {
       // 阻止事件冒泡
-      this.debugLog('阻止事件冒泡');
       return false;
     },
     
     // 菜单项点击 - 防止意外关闭
     handleMenuItemTap(e) {
-      // 阻止冒泡，确保不会触发其他事件
-      e.stopPropagation();
-    },
-    
-    // 跳转到个人主页
-    navigateToProfile() {
-      // 这里使用当前用户ID跳转到他的个人页面
-      const userInfo = this.data.userInfo || {};
-      const id = userInfo.id || '1';
-      
-      // 先关闭抽屉，防止冲突
-      this.hideDrawer();
-      
-      // 延迟导航，确保抽屉动画已经开始
-      setTimeout(() => {
-        wx.navigateTo({
-          url: `/pages/detail/detail?id=${id}`,
-          success: () => {
-            console.log('成功跳转到详情页');
-            this.debugLog('成功跳转到详情页');
-          },
-          fail: (err) => {
-            console.error('跳转失败', err);
-            this.debugLog(`跳转失败: ${JSON.stringify(err)}`);
-          }
-        });
-      }, 200);
-    },
-    
-    // 跳转到订单页
-    navigateToOrders() {
-      this.hideDrawer();
-      
-      setTimeout(() => {
-        wx.navigateTo({
-          url: '/pages/orders/orders',
-          success: () => this.debugLog('成功跳转到订单页'),
-          fail: (err) => this.debugLog(`跳转失败: ${JSON.stringify(err)}`)
-        });
-      }, 200);
-    },
-    
-    // 跳转到提名页
-    navigateToNominations() {
-      this.hideDrawer();
-      
-      setTimeout(() => {
-        wx.navigateTo({
-          url: '/pages/create/create',
-          success: () => this.debugLog('成功跳转到提名页'),
-          fail: (err) => this.debugLog(`跳转失败: ${JSON.stringify(err)}`)
-        });
-      }, 200);
-    },
-    
-    // 跳转到投票记录
-    navigateToVotes() {
-      this.hideDrawer();
-      
-      setTimeout(() => {
-        wx.showToast({
-          title: '功能开发中',
-          icon: 'none'
-        });
-      }, 200);
-    },
-    
-    // 跳转到音效设置
-    navigateToSoundSettings() {
-      this.hideDrawer();
-      
-      setTimeout(() => {
-        wx.showToast({
-          title: '功能开发中',
-          icon: 'none'
-        });
-      }, 200);
-    },
-    
-    // 跳转到关于页
-    navigateToAbout() {
-      this.hideDrawer();
-      
-      setTimeout(() => {
-        wx.navigateTo({
-          url: '/pages/about/about',
-          success: () => this.debugLog('成功跳转到关于页'),
-          fail: (err) => this.debugLog(`跳转失败: ${JSON.stringify(err)}`)
-        });
-      }, 200);
+      // 不使用e.stopPropagation()，因为某些情况下可能不存在
+      // 仅作为菜单点击处理函数，依靠外层的catchtap来阻止冒泡
+      return;
     },
     
     // 退出登录
@@ -228,15 +259,9 @@ Component({
         content: '确定要退出登录吗？',
         success: (res) => {
           if (res.confirm) {
-            // 清除登录信息
             wx.removeStorageSync('userInfo');
-            
-            // 通知外部组件用户已退出
             this.triggerEvent('logout');
-            
-            // 关闭抽屉
             this.hideDrawer();
-            
             wx.showToast({
               title: '已退出登录',
               icon: 'success'

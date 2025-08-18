@@ -21,29 +21,52 @@
     <!-- 数据统计卡片 -->
     <view class="stats-card card flex p-16">
       <view class="stat-item flex-1 flex flex-col items-center">
-        <text class="stat-number text-number">{{rankings.length}}</text>
+        <text class="stat-number text-number">{{totalNominations}}</text>
         <text class="stat-label text-small">上榜人数</text>
       </view>
       <view class="stat-item flex-1 flex flex-col items-center">
         <text class="stat-number text-number">{{totalVotes}}</text>
         <text class="stat-label text-small">总投票</text>
+        <text wx:if="{{voteGrowthRate > 0}}" class="vote-trend text-small text-green">+{{voteGrowthRate}}%</text>
+        <text wx:elif="{{voteGrowthRate < 0}}" class="vote-trend text-small text-red">{{voteGrowthRate}}%</text>
       </view>
       <view class="stat-item flex-1 flex flex-col items-center">
-        <view class="stat-icon">🔥</view>
-        <text class="stat-label text-small">火热榜</text>
+        <text class="stat-number text-number">{{totalUsers}}</text>
+        <text class="stat-label text-small">超过百人想吃</text>
       </view>
     </view>
   </view>
 
+  <!-- 加载状态 -->
+  <view class="loading-container" wx:if="{{isLoading}}">
+    <view class="loading-animation">⟳</view>
+    <text class="loading-text">加载榜单数据中...</text>
+  </view>
+
+  <!-- 错误状态 -->
+  <view class="error-container" wx:elif="{{loadError}}">
+    <view class="error-icon">❌</view>
+    <text class="error-text">加载失败</text>
+    <button class="retry-btn" bindtap="refreshData">重试</button>
+  </view>
+
+  <!-- 空数据状态 -->
+  <view class="empty-container" wx:elif="{{rankings.length === 0 && !isLoading}}">
+    <view class="empty-icon">📋</view>
+    <text class="empty-title">榜单暂无数据</text>
+    <text class="empty-text">成为第一个上榜的人吧！</text>
+    <button class="action-btn" bindtap="goToCreate">提名朋友</button>
+  </view>
+
   <!-- 排行榜列表 -->
-  <view class="ranking-list px-20">
+  <view class="ranking-list px-20" wx:elif="{{rankings.length > 0}}">
     <view 
       class="ranking-item card flex items-center p-16 mb-16" 
       wx:for="{{rankings}}" 
       wx:key="id"
       bindtap="goToDetail"
       data-id="{{item.id}}"
-    >
+     style="position: relative; left: 1rpx; top: -58rpx">
       <!-- 排名标识 -->
       <view class="rank-indicator flex justify-center items-center">
         <view wx:if="{{item.rank === 1}}" class="rank-icon">👑</view>
@@ -53,7 +76,7 @@
       </view>
       
       <!-- 头像 -->
-      <image class="avatar" src="{{item.avatar}}" mode="aspectFill"></image>
+      <image class="avatar" src="{{item.avatar}}" mode="aspectFill" lazy-load="true"></image>
       
       <!-- 用户信息 -->
       <view class="user-info flex-1 px-16">
@@ -90,7 +113,7 @@
   <!-- 悬浮关于按钮 (左下角) -->
   <view class="floating-btn about-btn" bindtap="goToAbout">
     <text class="btn-icon">ℹ️</text>
-    <text class="btn-text">关于作者</text>
+    <text class="btn-text">辱骂作者</text>
   </view>
   
   <!-- 悬浮添加按钮 (右下角) -->
@@ -103,7 +126,13 @@
   <user-center-drawer
     show="{{showUserCenter}}"
     userInfo="{{userInfo}}"
+    topOffset="{{drawerTopOffset}}"
     bind:close="closeUserCenter"
     bind:logout="handleUserLogout"
+    bind:login="handleUserLogin"
+    bind:updateUserInfo="handleUserInfoUpdate"
   />
+
+  <!-- 全局授权弹窗组件 -->
+  <auth-dialog id="authDialog"></auth-dialog>
 </view>

@@ -1,74 +1,172 @@
 <!-- 遮罩层 -->
 <view class="drawer-mask {{visible ? 'visible' : ''}}" bindtap="onMaskTap" style="z-index: 999;"></view>
 
-<!-- 抽屉面板 -->
-<view class="drawer-container {{visible ? 'visible' : ''}}" style="transform: translateX({{visible ? '0' : '100%'}});" catchall bindtap="stopPropagation">
-  <!-- 关闭按钮 -->
-  <view class="close-btn" catchtap="onClose">×</view>
+<!-- 主抽屉面板 -->
+<view class="drawer-container {{visible ? 'visible' : ''}}" style="padding-top: {{topOffset}}px;" catchall bindtap="stopPropagation">
   
-  <!-- 用户信息区域 -->
-  <view class="user-info-section" catchtap="handleMenuItemTap">
-    <view class="user-avatar-container" data-action="profile" catchtap="navigateToProfile">
-      <image class="user-avatar" src="{{userInfo.avatar || '/public/placeholder-user.jpg'}}" mode="aspectFill"></image>
+  <!-- 内容区域（可滚动） -->
+  <view class="drawer-content">
+    <!-- 用户信息区域 -->
+    <view class="user-info-section">
+      <!-- 已登录状态 -->
+      <block wx:if="{{userInfo}}">
+        <view class="user-avatar-container">
+          <image class="user-avatar" src="{{userInfo.avatarUrl || '/public/placeholder-user.jpg'}}" mode="aspectFill"></image>
+        </view>
+        <view class="user-details">
+          <text class="user-name">{{userInfo.name || '授权用户'}}</text>
+          <text class="user-status">{{(userInfo.votes || 0) + ' 人想吃'}}</text>
+        </view>
+      </block>
+      
+      <!-- 未登录状态 -->
+      <block wx:else>
+        <view class="user-avatar-container">
+          <image class="user-avatar" src="/public/placeholder-user.jpg" mode="aspectFill"></image>
+        </view>
+        <view class="user-details">
+          <text class="user-name">未登录用户</text>
+        </view>
+      </block>
     </view>
-    <view class="user-details" data-action="profile" catchtap="navigateToProfile">
-      <text class="user-name">{{userInfo.name || '未登录用户'}}</text>
-      <text class="user-status">{{userInfo.votes || 0}} 人想吃</text>
-    </view>
-    <view class="profile-link" data-action="profile" catchtap="navigateToProfile">
-      <text class="link-text">查看我的主页</text>
-      <text class="link-arrow">></text>
-    </view>
-  </view>
 
-  <!-- 功能列表分组1 -->
-  <view class="menu-group" catchtap="handleMenuItemTap">
-    <view class="menu-item" data-action="orders" catchtap="navigateToOrders">
-      <view class="menu-icon">📋</view>
-      <text class="menu-text">我的订单</text>
-      <view class="menu-arrow">></view>
+    <!-- 用户统计区域 -->
+    <view class="user-stats" wx:if="{{userStatistics}}">
+      <view class="stat-item">
+        <text class="stat-value">{{userStatistics.nominationsCount || 0}}</text>
+        <text class="stat-label">提名</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-value">{{userStatistics.votesCount || 0}}</text>
+        <text class="stat-label">投票</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-value">{{userStatistics.receivedVotesCount || 0}}</text>
+        <text class="stat-label">获赞</text>
+      </view>
     </view>
-    <view class="menu-item" data-action="nominations" catchtap="navigateToNominations">
-      <view class="menu-icon">🏆</view>
-      <text class="menu-text">我的提名</text>
-      <view class="menu-arrow">></view>
-    </view>
-    <view class="menu-item" data-action="votes" catchtap="navigateToVotes">
-      <view class="menu-icon">👍</view>
-      <text class="menu-text">我的投票记录</text>
-      <view class="menu-arrow">></view>
-    </view>
-  </view>
 
-  <!-- 功能列表分组2 -->
-  <view class="menu-group" catchtap="handleMenuItemTap">
-    <view class="menu-item" data-action="sound" catchtap="navigateToSoundSettings">
-      <view class="menu-icon">🔊</view>
-      <text class="menu-text">音效设置</text>
-      <view class="menu-arrow">></view>
+    <!-- 功能列表分组1 -->
+    <view class="menu-group" catchtap="handleMenuItemTap">
+      <view class="menu-item" data-action="orders" catchtap="showSubDrawer">
+        <view class="menu-icon">📋</view>
+        <text class="menu-text">我的订单</text>
+        <view class="menu-arrow">></view>
+      </view>
+      <view class="menu-item" data-action="nominations" catchtap="showSubDrawer">
+        <view class="menu-icon">🏆</view>
+        <text class="menu-text">我的提名</text>
+        <view class="menu-arrow">></view>
+      </view>
+      <view class="menu-item" data-action="messages" catchtap="showSubDrawer">
+        <view class="menu-icon">👍</view>
+        <text class="menu-text">我的消息</text>
+        <view wx:if="{{unreadMessageCount > 0}}" class="badge">{{unreadMessageCount}}</view>
+        <view class="menu-arrow">></view>
+      </view>
+      <view class="menu-item" data-action="sounds" catchtap="showSubDrawer">
+        <view class="menu-icon">🔊</view>
+        <text class="menu-text">我的音效</text>
+        <view class="menu-arrow">></view>
+      </view>
     </view>
-    <view class="menu-item" data-action="about" catchtap="navigateToAbout">
-      <view class="menu-icon">ℹ️</view>
-      <text class="menu-text">关于榜单</text>
-      <view class="menu-arrow">></view>
-    </view>
-  </view>
 
+    <!-- 功能列表分组2 -->
+    <view class="menu-group" catchtap="handleMenuItemTap">
+      <view class="menu-item" data-action="about" catchtap="showSubDrawer">
+        <view class="menu-icon">ℹ️</view>
+        <text class="menu-text">关于榜单</text>
+        <view class="menu-arrow">></view>
+      </view>
+    </view>
+    
+    <!-- 底部填充，确保内容不被退出按钮遮挡 -->
+    <view class="bottom-padding"></view>
+  </view>
+  
   <!-- 退出登录 -->
   <view class="logout-section">
     <button class="logout-btn" catchtap="logout">退出登录</button>
   </view>
-  
-  <!-- 调试信息区域 -->
-  <view class="debug-panel" wx:if="{{debugMessages.length > 0}}">
-    <text class="debug-title">调试信息:</text>
-    <view class="debug-logs">
-      <text class="debug-log" wx:for="{{debugMessages}}" wx:key="index">{{item}}</text>
+</view>
+
+<!-- 子抽屉 - 我的订单 -->
+<view wx:if="{{activeSubDrawer === 'orders'}}" class="sub-drawer {{subDrawerVisible ? 'visible' : ''}}" catchtap="stopPropagation">
+  <view class="sub-drawer-header">
+    <text class="sub-drawer-title">我的订单</text>
+  </view>
+  <view class="sub-drawer-content">
+    <!-- 订单内容 -->
+    <view class="empty-state">
+      <text class="empty-icon">📋</text>
+      <text class="empty-text">暂无订单记录</text>
     </view>
   </view>
 </view>
 
-<!-- 调试状态指示器 -->
-<view class="debug-indicator {{visible ? 'active' : ''}}" wx:if="{{show && !visible}}">
-  <text>抽屉显示中问题</text>
+<!-- 子抽屉 - 我的提名 -->
+<view wx:if="{{activeSubDrawer === 'nominations'}}" class="sub-drawer {{subDrawerVisible ? 'visible' : ''}}" catchtap="stopPropagation">
+  <view class="sub-drawer-header">
+    <text class="sub-drawer-title">我的提名</text>
+  </view>
+  <view class="sub-drawer-content">
+    <!-- 提名内容 -->
+    <view class="empty-state">
+      <text class="empty-icon">🏆</text>
+      <text class="empty-text">暂无提名记录</text>
+    </view>
+  </view>
+</view>
+
+<!-- 子抽屉 - 我的消息 -->
+<view wx:if="{{activeSubDrawer === 'messages'}}" class="sub-drawer {{subDrawerVisible ? 'visible' : ''}}" catchtap="stopPropagation">
+  <view class="sub-drawer-header">
+    <text class="sub-drawer-title">我的消息</text>
+  </view>
+  <view class="sub-drawer-content">
+    <!-- 消息内容 -->
+    <view class="empty-state">
+      <text class="empty-icon">💬</text>
+      <text class="empty-text">暂无消息记录</text>
+    </view>
+  </view>
+</view>
+
+<!-- 子抽屉 - 我的音效 -->
+<view wx:if="{{activeSubDrawer === 'sounds'}}" class="sub-drawer {{subDrawerVisible ? 'visible' : ''}}" catchtap="stopPropagation">
+  <view class="sub-drawer-header">
+    <text class="sub-drawer-title">我的音效</text>
+  </view>
+  <view class="sub-drawer-content">
+    <!-- 音效内容 -->
+    <view class="sound-settings">
+      <view class="setting-item">
+        <text class="setting-label">启用投票音效</text>
+        <switch checked="{{false}}" />
+      </view>
+      <view class="setting-item">
+        <text class="setting-label">当前音效</text>
+        <text class="setting-value">未设置</text>
+      </view>
+      <view class="setting-actions">
+        <button class="setting-btn" disabled="true">预览</button>
+        <button class="setting-btn primary">录制新的音效</button>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 子抽屉 - 关于榜单 -->
+<view wx:if="{{activeSubDrawer === 'about'}}" class="sub-drawer {{subDrawerVisible ? 'visible' : ''}}" catchtap="stopPropagation">
+  <view class="sub-drawer-header">
+    <text class="sub-drawer-title">关于榜单</text>
+  </view>
+  <view class="sub-drawer-content">
+    <!-- 关于内容 -->
+    <view class="about-content">
+      <text class="about-title">伦敦必吃榜</text>
+      <text class="about-version">版本 1.0.0</text>
+      <text class="about-desc">一个朋友圈娱乐互动的微信小程序，专为在伦敦的朋友们设计的社交娱乐排行榜。</text>
+    </view>
+  </view>
 </view> 

@@ -1,0 +1,213 @@
+.container {
+  min-height: 100vh;
+  background-color: #f7f8fa;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 头部样式 */
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 90rpx;
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 30rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+  z-index: 100;
+}
+
+.back-button {
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.back-icon {
+  font-size: 36rpx;
+  color: #333333;
+}
+
+.header-title {
+  font-size: 34rpx;
+  font-weight: 500;
+  color: #333333;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+}
+
+.mark-all-read {
+  font-size: 28rpx;
+  color: #10B981;
+  padding: 10rpx 0;
+}
+
+/* 标签页样式 */
+.message-tabs {
+  display: flex;
+  background-color: #ffffff;
+  border-bottom: 1rpx solid #f0f0f0;
+  padding: 0 20rpx;
+  margin-top: 90rpx;
+  position: sticky;
+  top: 0;
+  z-index: 99;
+}
+
+.tab {
+  position: relative;
+  flex: 1;
+  height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  color: #666666;
+  position: relative;
+}
+
+.tab.active {
+  color: #10B981;
+  font-weight: 500;
+}
+
+.tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40rpx;
+  height: 4rpx;
+  background-color: #10B981;
+  border-radius: 2rpx;
+}
+
+.tab-badge {
+  position: absolute;
+  top: 10rpx;
+  right: 50%;
+  margin-right: -40rpx;
+  min-width: 32rpx;
+  height: 32rpx;
+  border-radius: 16rpx;
+  background-color: #ff4d4f;
+  color: #ffffff;
+  font-size: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6rpx;
+}
+
+/* 消息列表样式 */
+.message-list {
+  flex: 1;
+  padding: 20rpx 30rpx;
+  box-sizing: border-box;
+  height: calc(100vh - 170rpx);
+}
+
+.message-item {
+  background-color: #ffffff;
+  border-radius: 12rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.message-item.unread {
+  background-color: #f0f9f6;
+  border-left: 6rpx solid #10B981;
+}
+
+.message-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.sender-avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  margin-right: 16rpx;
+}
+
+.message-info {
+  flex: 1;
+}
+
+.sender-name {
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #333333;
+  margin-bottom: 4rpx;
+  display: block;
+}
+
+.message-time {
+  font-size: 24rpx;
+  color: #999999;
+}
+
+.unread-indicator {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  background-color: #10B981;
+}
+
+.message-content {
+  font-size: 30rpx;
+  color: #333333;
+  line-height: 1.5;
+}
+
+.nomination-ref {
+  margin-top: 16rpx;
+  font-size: 26rpx;
+  color: #888888;
+  padding: 12rpx 16rpx;
+  background-color: #f9f9f9;
+  border-radius: 8rpx;
+}
+
+/* 加载更多和空状态 */
+.loading-more, .no-more {
+  text-align: center;
+  padding: 30rpx 0;
+}
+
+.loading-more text, .no-more text {
+  font-size: 26rpx;
+  color: #999999;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 100rpx 0;
+}
+
+.empty-icon {
+  font-size: 100rpx;
+  margin-bottom: 30rpx;
+  color: #cccccc;
+}
+
+.empty-text {
+  font-size: 30rpx;
+  color: #999999;
+} 

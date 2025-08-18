@@ -18,7 +18,7 @@
     "checkInvalidKey": true,
     "checkSiteMap": true,
     "uploadWithSourceMap": true,
-    "compileHotReLoad": false,
+    "compileHotReLoad": true,
     "lazyloadPlaceholderEnable": false,
     "useMultiFrameRuntime": true,
     "useApiHook": true,
@@ -37,13 +37,89 @@
     "showES6CompileOption": false,
     "useCompilerPlugins": false,
     "minifyWXML": true,
-    "ignoreUploadUnusedFiles": true
+    "ignoreUploadUnusedFiles": true,
+    "compileWorklet": false,
+    "localPlugins": false,
+    "condition": false,
+    "swc": false,
+    "disableSWC": true
   },
-  "appid": "wxa37e0d7785493678",
+  "appid": "wx29cb754190a5c042",
   "projectname": "伦敦必吃榜",
-  "libVersion": "2.24.2",
+  "libVersion": "2.22.0",
   "simulatorType": "wechat",
   "simulatorPluginLibVersion": {},
-  "cloudfunctionTemplateRoot": "cloudfunctionTemplate",
-  "condition": {}
+  "cloudfunctionTemplateRoot": "cloudfunctionTemplate/",
+  "condition": {},
+  "compileType": "miniprogram",
+  "packOptions": {
+    "ignore": [
+      {
+        "type": "folder",
+        "value": "components/ui"
+      },
+      {
+        "type": "folder",
+        "value": "hooks"
+      },
+      {
+        "type": "folder",
+        "value": "app"
+      },
+      {
+        "type": "folder",
+        "value": "styles"
+      },
+      {
+        "type": "folder",
+        "value": "lib"
+      },
+      {
+        "type": "folder",
+        "value": "pages/search"
+      },
+      {
+        "type": "file",
+        "value": "components/theme-provider.tsx"
+      },
+      {
+        "type": "file",
+        "value": "next.config.mjs"
+      },
+      {
+        "type": "file",
+        "value": "tailwind.config.ts"
+      },
+      {
+        "type": "file",
+        "value": "postcss.config.mjs"
+      },
+      {
+        "type": "file",
+        "value": "tsconfig.json"
+      },
+      {
+        "type": "file",
+        "value": "components.json"
+      },
+      {
+        "type": "file",
+        "value": "package.json"
+      },
+      {
+        "type": "file",
+        "value": "package-lock.json"
+      },
+      {
+        "type": "file",
+        "value": "pnpm-lock.yaml"
+      }
+    ],
+    "include": []
+  },
+  "editorSetting": {
+    "tabIndent": "insertSpaces",
+    "tabSize": 2
+  },
+  "cloudfunctionAutoDeploy": true
 }

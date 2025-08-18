@@ -5,7 +5,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.6); /* 更深的黑色 */
+  background-color: rgba(0, 0, 0, 0.6);
   z-index: 999;
   opacity: 0;
   visibility: hidden;
@@ -17,50 +17,93 @@
   visibility: visible;
 }
 
-/* 抽屉容器 - 现在从顶部右侧弹出 */
+/* 主抽屉容器 */
 .drawer-container {
   position: fixed;
   top: 0;
-  right: 0;
-  width: 90%; /* 稍微加宽 */
+  right: -100%;
+  width: 75%;
   height: 100%;
   background-color: #FFFFFF;
   z-index: 1000;
   display: flex;
   flex-direction: column;
-  box-shadow: -8px 0 20px rgba(0, 0, 0, 0.2); /* 加强阴影 */
-  padding: 20px 0;
+  box-shadow: -8px 0 20px rgba(0, 0, 0, 0.2);
+  padding: 0;
   box-sizing: border-box;
-  transition: transform 0.3s ease;
-  transform: translateX(100%); /* 默认隐藏在右侧 */
-  overflow-y: auto;
+  transition: all 0.3s ease;
+  transform: translateX(0);
+  opacity: 0;
+  visibility: hidden;
+  overflow: hidden; /* 改为hidden，内部内容区域单独滚动 */
   -webkit-overflow-scrolling: touch;
 }
 
 .drawer-container.visible {
-  transform: translateX(0);
+  right: 0;
+  opacity: 1;
+  visibility: visible;
+  box-shadow: -8px 0 20px rgba(0, 0, 0, 0.2);
 }
 
-/* 关闭按钮 */
-.close-btn {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  width: 36px; /* 加大按钮 */
-  height: 36px; /* 加大按钮 */
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.1);
+/* 抽屉内容区域 - 可滚动 */
+.drawer-content {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 80px; /* 为底部按钮留出空间 */
+}
+
+/* 底部填充区域 */
+.bottom-padding {
+  height: 20px; /* 额外底部填充 */
+}
+
+/* 子抽屉容器 */
+.sub-drawer {
+  position: fixed;
+  top: 0;
+  right: -100%; /* 确保完全在屏幕外 */
+  width: 75%;
+  height: 100%;
+  background-color: #FFFFFF;
+  z-index: 1001; /* 比主抽屉高 */
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+  transform: translateX(0); /* 不使用transform，改用right定位 */
+  opacity: 0;
+  visibility: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sub-drawer.visible {
+  right: 0; /* 显示时移动到屏幕内 */
+  opacity: 1;
+  visibility: visible;
+  box-shadow: -8px 0 20px rgba(0, 0, 0, 0.2);
+}
+
+.sub-drawer-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #F3F4F6;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px; /* 加大字号 */
-  color: #4B5563;
-  z-index: 1001;
-  font-weight: bold;
 }
 
-.close-btn:active {
-  background: rgba(0, 0, 0, 0.2);
+.sub-drawer-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1F2937;
+}
+
+.sub-drawer-content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
 }
 
 /* 用户信息区域 */
@@ -70,8 +113,6 @@
   padding: 20px;
   position: relative;
   margin-bottom: 20px;
-  /* 添加顶部内边距以避免状态栏遮挡 */
-  padding-top: 40px;
 }
 
 .user-avatar-container {
@@ -102,26 +143,6 @@
   font-size: 14px;
   color: #6B7280;
   display: block;
-}
-
-.profile-link {
-  position: absolute;
-  right: 20px;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  align-items: center;
-}
-
-.link-text {
-  font-size: 12px;
-  color: #6B7280;
-}
-
-.link-arrow {
-  font-size: 12px;
-  color: #6B7280;
-  margin-left: 4px;
 }
 
 /* 菜单分组 */
@@ -165,14 +186,18 @@
 
 /* 退出登录按钮 */
 .logout-section {
-  margin-top: auto;
-  padding: 0 20px;
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  right: 20px;
+  padding: 0;
+  z-index: 10; /* 确保在内容之上 */
 }
 
 .logout-btn {
   width: 100%;
   height: 44px;
-  border-radius: 8px;
+  border-radius: 999px;
   background-color: #F3F4F6;
   color: #6B7280;
   font-size: 16px;
@@ -180,53 +205,211 @@
   align-items: center;
   justify-content: center;
   border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .logout-btn:after {
   border: none;
 }
 
-/* 调试面板 */
-.debug-panel {
-  margin-top: 20px;
+/* 空状态 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  color: #D1D5DB;
+}
+
+.empty-text {
+  font-size: 16px;
+  color: #6B7280;
+}
+
+/* 音效设置 */
+.sound-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.setting-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.setting-label {
+  font-size: 16px;
+  color: #1F2937;
+}
+
+.setting-value {
+  font-size: 14px;
+  color: #6B7280;
+}
+
+.setting-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.setting-btn {
+  flex: 1;
   padding: 10px;
-  background-color: #f8f9fa;
+  font-size: 14px;
   border-radius: 8px;
-  margin: 20px;
+  background: #F3F4F6;
+  color: #6B7280;
+  text-align: center;
+  border: none;
+}
+
+.setting-btn.primary {
+  background: #10B981;
+  color: white;
+}
+
+/* 关于内容 */
+.about-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 20px 0;
+}
+
+.about-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1F2937;
+  margin-bottom: 8px;
+}
+
+.about-version {
+  font-size: 14px;
+  color: #6B7280;
+  margin-bottom: 16px;
+}
+
+.about-desc {
+  font-size: 14px;
+  color: #4B5563;
+  line-height: 1.6;
+}
+
+/* 用户统计区域 */
+.user-stats {
+  display: flex;
+  justify-content: space-around;
+  padding: 16px 20px;
+  background: #F9FAFB;
+  margin: 0 12px 20px 12px;
+  border-radius: 12px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #10B981;
+  margin-bottom: 4px;
+}
+
+.stat-label {
   font-size: 12px;
   color: #6B7280;
 }
 
-.debug-title {
-  font-weight: bold;
-  margin-bottom: 5px;
-  display: block;
-}
-
-.debug-logs {
-  max-height: 150px;
-  overflow-y: auto;
-}
-
-.debug-log {
-  display: block;
-  padding: 2px 0;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-/* 调试指示器 */
-.debug-indicator {
-  position: fixed;
-  top: 10px;
-  right: 10px;
-  background-color: rgba(239, 68, 68, 0.9);
-  color: white;
-  padding: 5px 10px;
-  border-radius: 4px;
+/* 消息数量标记 */
+.badge {
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  background: #EF4444;
+  color: #FFFFFF;
   font-size: 12px;
-  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  margin-right: 8px;
 }
 
-.debug-indicator.active {
-  background-color: rgba(34, 197, 94, 0.9);
+.login-btn {
+  margin-top: 10rpx;
+  background-color: #8B5CF6;
+  color: #fff;
+  font-size: 28rpx;
+  padding: 8rpx 24rpx;
+  border-radius: 999rpx;
+  line-height: 1.5;
+  border: none;
+}
+
+.nickname-display {
+  display: flex;
+  align-items: center;
+}
+
+.edit-icon {
+  width: 32rpx;
+  height: 32rpx;
+  margin-left: 16rpx;
+  opacity: 0.7;
+  padding: 5rpx; /* Increase clickable area */
+}
+
+.nickname-edit {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.nickname-input {
+  border: 1px solid #ddd;
+  border-radius: 8rpx;
+  padding: 8rpx 12rpx;
+  font-size: 28rpx;
+  width: 90%;
+  margin-bottom: 16rpx;
+  box-sizing: border-box;
+}
+
+.edit-actions {
+  display: flex;
+}
+
+.save-btn, .cancel-btn {
+  font-size: 24rpx;
+  padding: 4rpx 16rpx;
+  height: auto;
+  line-height: 1.5;
+  margin-right: 16rpx;
+  border: none;
+}
+
+.save-btn {
+  background-color: #07c160;
+  color: white;
+}
+
+.cancel-btn {
+  background-color: #f0f0f0;
+  color: #333;
 } 

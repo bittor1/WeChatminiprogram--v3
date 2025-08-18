@@ -1,0 +1,14 @@
+{
+  "name": "grantShareReward",
+  "version": "1.0.0",
+  "description": "处理分享奖励的云函数",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "wx-server-sdk": "latest"
+  }
+} 

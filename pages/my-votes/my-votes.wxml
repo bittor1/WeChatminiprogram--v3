@@ -1,0 +1,70 @@
+<view class="container">
+  <view class="header">
+    <view class="back-button" bindtap="goBack"><text class="back-icon">←</text></view>
+    <text class="header-title">我的消息</text>
+    <view class="header-actions">
+      <text class="mark-all-read" bindtap="markAllRead">全部已读</text>
+    </view>
+  </view>
+  
+  <!-- 消息分类标签 -->
+  <view class="message-tabs">
+    <view class="tab {{activeTab === 'all' ? 'active' : ''}}" bindtap="switchTab" data-tab="all">
+      全部
+      <view class="tab-badge" wx:if="{{unreadCounts.all > 0}}">{{unreadCounts.all}}</view>
+    </view>
+    <view class="tab {{activeTab === 'comment' ? 'active' : ''}}" bindtap="switchTab" data-tab="comment">
+      评论
+      <view class="tab-badge" wx:if="{{unreadCounts.comment > 0}}">{{unreadCounts.comment}}</view>
+    </view>
+    <view class="tab {{activeTab === 'vote' ? 'active' : ''}}" bindtap="switchTab" data-tab="vote">
+      投票
+      <view class="tab-badge" wx:if="{{unreadCounts.vote > 0}}">{{unreadCounts.vote}}</view>
+    </view>
+    <view class="tab {{activeTab === 'system' ? 'active' : ''}}" bindtap="switchTab" data-tab="system">
+      系统
+      <view class="tab-badge" wx:if="{{unreadCounts.system > 0}}">{{unreadCounts.system}}</view>
+    </view>
+  </view>
+  
+  <!-- 消息列表 -->
+  <scroll-view class="message-list" scroll-y enable-back-to-top bindscrolltolower="loadMoreMessages">
+    <block wx:if="{{messages.length > 0}}">
+      <view wx:for="{{messages}}" wx:key="_id" class="message-item {{item.status === 0 ? 'unread' : ''}}">
+        <!-- 消息头部 -->
+        <view class="message-header">
+          <image class="sender-avatar" src="{{item.senderAvatar}}" mode="aspectFill"></image>
+          <view class="message-info">
+            <text class="sender-name">{{item.senderName}}</text>
+            <text class="message-time">{{formatTime(item.createTime)}}</text>
+          </view>
+          <view class="unread-indicator" wx:if="{{item.status === 0}}"></view>
+        </view>
+        
+        <!-- 消息内容 -->
+        <view class="message-content" bindtap="onMessageTap" data-id="{{item._id}}" data-related="{{item.relatedId}}" data-nomination="{{item.nominationId}}">
+          <text>{{item.content}}</text>
+          <view class="nomination-ref" wx:if="{{item.nominationTitle}}">
+            来自：{{item.nominationTitle}}
+          </view>
+        </view>
+      </view>
+    </block>
+    
+    <!-- 加载更多 -->
+    <view class="loading-more" wx:if="{{hasMore}}" bindtap="loadMoreMessages">
+      <text>加载更多...</text>
+    </view>
+    
+    <!-- 没有更多数据 -->
+    <view class="no-more" wx:if="{{messages.length > 0 && !hasMore}}">
+      <text>没有更多消息了</text>
+    </view>
+    
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{messages.length === 0}}">
+      <view class="empty-icon">📭</view>
+      <text class="empty-text">暂无消息</text>
+    </view>
+  </scroll-view>
+</view> 

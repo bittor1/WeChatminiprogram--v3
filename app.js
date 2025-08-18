@@ -1,6 +1,7 @@
 // app.js
-const paymentUtils = require('./utils/paymentUtils');
+const cloudUtils = require('./utils/cloudUtils');
 
+// 移除monkey patch，使用标准API
 App({
   onLaunch: function() {
     console.log('应用初始化');
@@ -9,10 +10,38 @@ App({
     this.initializeGlobalData();
     
     // 记录当前版本
-    console.log('当前版本: 1.0.1');
+    console.log('当前版本: 1.0.2');
     
     // 清除可能导致问题的缓存
     this.clearProblemCache();
+    
+    // 检查并初始化数据库
+    this.initializeDatabase();
+    
+    // 检查每日投票限制重置
+    this.checkDailyVoteLimitReset();
+    
+    // 检查分享功能支持
+    this.checkShareSupport();
+  },
+  
+  // 检查分享功能支持
+  checkShareSupport() {
+    // 获取分享功能支持信息
+    const shareSupport = cloudUtils.checkShareSupport();
+    this.globalData.shareSupport = shareSupport;
+    
+    console.log('分享功能支持检查:', shareSupport);
+  },
+  
+  // 在全局启用分享功能
+  enableShareMenu() {
+    return cloudUtils.enableShareMenu();
+  },
+  
+  // 显示分享成功提示
+  showShareSuccess() {
+    cloudUtils.showShareSuccess();
   },
   
   // 清除可能导致问题的缓存
@@ -26,13 +55,46 @@ App({
     }
   },
   
+  // 检查每日投票限制是否需要重置
+  checkDailyVoteLimitReset: function() {
+    try {
+      const lastResetDateStr = wx.getStorageSync('lastVoteLimitResetDate');
+      const now = new Date();
+      const today = this.getDateString(now);
+      
+      if (!lastResetDateStr || lastResetDateStr !== today) {
+        console.log('重置每日投票限制...');
+        
+        // 清除所有投票限制记录
+        const storage = wx.getStorageInfoSync({});
+        const keys = storage.keys;
+        
+        keys.forEach(key => {
+          if (key.startsWith('voteLimits_') || key.startsWith('downvoteLimits_')) {
+            wx.removeStorageSync(key);
+          }
+        });
+        
+        // 记录今天的重置日期
+        wx.setStorageSync('lastVoteLimitResetDate', today);
+      }
+    } catch (e) {
+      console.error('检查每日投票限制重置出错:', e);
+    }
+  },
+  
+  // 获取日期字符串 YYYY-MM-DD
+  getDateString: function(date) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  },
+  
   // 初始化全局数据
   initializeGlobalData: function() {
     // 初始化云开发
     if (wx.cloud) {
       wx.cloud.init({
         traceUser: true, // 记录用户访问、调用信息
-        env: 'dechi-leaderboard-1gxyz' // 云开发环境ID，请替换为您自己的环境ID
+        env: 'cloud1-2g2sby6z920b76cb' // 更新为新的云开发环境ID
       })
       console.log('云开发初始化成功')
     } else {
@@ -52,41 +114,120 @@ App({
       },
     })
     
-    // 加载排行榜数据
-    this.refreshRankingData();
+    // 初始化rankings为空数组，避免显示默认的张三数据
+    this.globalData.rankings = [];
+    
+    // 立即加载排行榜数据
+    this.refreshRankingData().catch(err => {
+      console.error('初始化排行榜数据失败:', err);
+    });
+  },
+  
+  // 检查并初始化数据库
+  initializeDatabase: function() {
+    if (!wx.cloud) {
+      console.error('云开发未初始化，无法初始化数据库');
+      return;
+    }
+    
+    wx.cloud.callFunction({
+      name: 'dbInit',
+      data: {
+        forceInit: false,       // 是否强制初始化（忽略权限检查）
+        initSampleData: false   // 是否初始化示例数据
+      }
+    }).then(res => {
+      console.log('数据库初始化检查结果:', res.result);
+      
+      // 如果集合未创建，重新加载排行榜数据
+      const result = res.result;
+      if (result && result.success) {
+        const collections = result.results.collections || [];
+        const hasNewCollection = collections.some(c => c.status === 'created');
+        
+        if (hasNewCollection) {
+          console.log('检测到新建的数据库集合，重新加载排行榜数据');
+          this.refreshRankingData();
+        }
+      }
+    }).catch(err => {
+      console.error('数据库初始化检查失败:', err);
+    });
   },
   
   // 从云数据库刷新排行榜数据
   refreshRankingData() {
-    // 如果云开发已初始化
-    if (wx.cloud) {
-      wx.cloud.database().collection('entries')
-        .orderBy('votes', 'desc')
-        .limit(10)
-        .get()
-        .then(res => {
-          console.log('获取排行榜数据成功:', res);
-          const rankings = res.data.map((item, index) => {
-            return {
-              id: item._id,
-              rank: index + 1,
-              name: item.name,
-              avatar: item.avatarUrl,
-              votes: item.votes || 0,
-              trend: item.trend || 'stable',
-              hotLevel: item.hotLevel || 1,
-              isGif: item.isGif || false,
-            };
+    return new Promise((resolve, reject) => {
+      // 如果云开发已初始化
+      if (wx.cloud) {
+        // 查询所有提名，不再过滤votes > 0
+        const db = wx.cloud.database();
+        db.collection('entries')
+          .orderBy('votes', 'desc')
+          .limit(20) // 增加限制数量，确保能看到更多提名
+          .get()
+          .then(res => {
+            console.log('获取排行榜数据成功:', res);
+            
+            // 如果数据库有数据，使用数据库数据
+            if (res.data && res.data.length > 0) {
+              const rankings = res.data.map((item, index) => {
+                return {
+                  id: item._id,
+                  rank: index + 1,
+                  name: item.name,
+                  avatar: item.avatarUrl,
+                  votes: item.votes || 0,
+                  trend: item.trend || 'stable',
+                  hotLevel: item.hotLevel || 1,
+                  isGif: item.isGif || false,
+                };
+              });
+              
+              // 更新全局数据
+              this.globalData.rankings = rankings;
+            }
+            
+            resolve(this.globalData.rankings);
+          })
+          .catch(err => {
+            console.error('获取排行榜数据失败:', err);
+            // 显示友好的错误提示
+            wx.showToast({
+              title: '获取数据失败，请重试',
+              icon: 'none'
+            });
+            reject(err);
           });
-          
-          // 更新全局数据
-          if (rankings.length > 0) {
-            this.globalData.rankings = rankings;
-          }
-        })
-        .catch(err => {
-          console.error('获取排行榜数据失败:', err);
+      } else {
+        console.error('云开发未初始化');
+        wx.showToast({
+          title: '系统初始化失败',
+          icon: 'none'
         });
+        reject(new Error('云开发未初始化'));
+      }
+    });
+  },
+  
+  // 检查用户是否已登录 (现在检查userInfo对象)
+  checkUserLogin: function() {
+    const userInfo = wx.getStorageSync('userInfo');
+    return userInfo && userInfo._id; // 检查是否存在且有_id
+  },
+  
+  // 检查转发状态
+  checkShareStatus: function(userId, shareType) {
+    try {
+      const shareInfoStr = wx.getStorageSync(`shareInfo_${userId}`);
+      if (!shareInfoStr) return false;
+      
+      const shareInfo = JSON.parse(shareInfoStr);
+      return shareType === 'friend' ? shareInfo.sharedToFriend : 
+             shareType === 'timeline' ? shareInfo.sharedToTimeline : false;
+    } catch (e) {
+      console.error('检查转发状态失败:', e);
+      return false;
     }
   },
   
@@ -178,138 +319,15 @@ App({
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
   },
   
-  // 创建并处理支付
-  createPayment(type, count, targetId, userId) {
-    return new Promise((resolve, reject) => {
-      // 生成订单
-      const orderData = paymentUtils.generateOrder(type, count, userId);
-      // 添加目标用户ID
-      orderData.targetId = targetId;
-      
-      // 发起支付
-      paymentUtils.requestPayment(orderData)
-        .then(res => {
-          // 支付成功后保存订单
-          return paymentUtils.saveOrderToDb(orderData);
-        })
-        .then(() => {
-          // 返回成功结果
-          resolve({
-            success: true,
-            orderData
-          });
-        })
-        .catch(err => {
-          // 返回错误结果
-          reject(err);
-        });
-    });
-  },
+  // createPayment 函数已移除
   
   // 全局变量
   globalData: {
     userInfo: null,
-    rankings: [
-      {
-        id: "1",
-        rank: 1,
-        name: "张三",
-        avatar: "/public/placeholder-user.jpg",
-        votes: 1250,
-        trend: "up",
-        hotLevel: 5,
-        isGif: false,
-      },
-      {
-        id: "2", 
-        rank: 2,
-        name: "李四",
-        avatar: "/public/placeholder-user.jpg",
-        votes: 1120,
-        trend: "up",
-        hotLevel: 4,
-        isGif: false,
-      },
-      {
-        id: "3",
-        rank: 3,
-        name: "王五",
-        avatar: "/public/placeholder-user.jpg",
-        votes: 980,
-        trend: "stable",
-        hotLevel: 3,
-        isGif: true,
-      },
-      {
-        id: "4",
-        rank: 4,
-        name: "赵六",
-        avatar: "/public/placeholder-user.jpg",
-        votes: 820,
-        trend: "down",
-        hotLevel: 2,
-        isGif: false,
-      },
-      {
-        id: "5",
-        rank: 5,
-        name: "钱七",
-        avatar: "/public/placeholder-user.jpg",
-        votes: 750,
-        trend: "up",
-        hotLevel: 3,
-        isGif: false,
-      },
-      {
-        id: "6",
-        rank: 6,
-        name: "孙八",
-        avatar: "/public/placeholder-user.jpg",
-        votes: 680,
-        trend: "stable",
-        hotLevel: 2,
-        isGif: false,
-      },
-      {
-        id: "7",
-        rank: 7,
-        name: "周九",
-        avatar: "/public/placeholder-user.jpg",
-        votes: 620,
-        trend: "down",
-        hotLevel: 2,
-        isGif: true,
-      },
-      {
-        id: "8",
-        rank: 8,
-        name: "吴十",
-        avatar: "/public/placeholder-user.jpg",
-        votes: 550,
-        trend: "down",
-        hotLevel: 1,
-        isGif: false,
-      },
-      {
-        id: "9",
-        rank: 9,
-        name: "郑十一",
-        avatar: "/public/placeholder-user.jpg",
-        votes: 480,
-        trend: "stable",
-        hotLevel: 1,
-        isGif: false,
-      },
-      {
-        id: "10",
-        rank: 10,
-        name: "王十二",
-        avatar: "/public/placeholder-user.jpg",
-        votes: 420,
-        trend: "up",
-        hotLevel: 3,
-        isGif: false,
-      },
-    ],
+    shareSupport: {
+      canShareTimeline: false,
+      canShowShareMenu: false
+    },
+    rankings: [] // 初始化为空数组
   },
 })

@@ -1,6 +1,6 @@
 {
   "libVersion": "3.9.0",
-  "projectname": "london-dechi-leaderboard",
+  "projectname": "%E4%BC%A6%E6%95%A6%E5%BF%85%E5%90%83%E6%A6%9C",
   "condition": {},
   "setting": {
     "urlCheck": true,
@@ -19,6 +19,21 @@
     "checkInvalidKey": true,
     "ignoreDevUnusedFiles": true,
     "bigPackageSizeSupport": false,
-    "useIsolateContext": true
+    "useIsolateContext": true,
+    "enableScriptNative": false,
+    "minified": true,
+    "useMultiFrameRuntime": true,
+    "packNpmManually": false,
+    "packNpmRelationList": [],
+    "minifyWXSS": true,
+    "disableUseStrict": false
+  },
+  "description": "项目私有配置文件。此文件中的内容将覆盖 project.config.json 中的相同字段。项目的改动优先同步到此文件中。",
+  "cloudfunctionTemplateRoot": "cloudfunctionTemplate/",
+  "permissions": {
+    "openapi": [
+      "getRecorderManager",
+      "createInnerAudioContext"
+    ]
   }
 }

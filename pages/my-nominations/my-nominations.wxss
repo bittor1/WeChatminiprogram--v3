@@ -1,0 +1,26 @@
+/* 容器 */
+.container { min-height: 100vh; background: #F7F8FA; display: flex; flex-direction: column; }
+
+/* 头部 */
+.header { display: flex; align-items: center; justify-content: space-between; height: 88rpx; background: #fff; padding: 0 32rpx; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+.back-button { width: 64rpx; height: 64rpx; display: flex; align-items: center; justify-content: center; }
+.back-icon { font-size: 32rpx; color: #1F2937; }
+.header-title { font-size: 36rpx; font-weight: 600; color: #1F2937; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+.header-placeholder { width: 64rpx; }
+
+/* 加载/空 */
+.loading, .empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80rpx; }
+.loading-icon { font-size: 64rpx; margin-bottom: 16rpx; color: #6B7280; animation: spin 1s linear infinite; }
+.loading-text, .empty-text { font-size: 32rpx; color: #6B7280; }
+.empty-icon { font-size: 112rpx; margin-bottom: 16rpx; color: #D1D5DB; }
+.action-btn { margin-top: 24rpx; padding: 16rpx 40rpx; background: #10B981; color: #fff; border-radius: 8rpx; font-size: 28rpx; }
+@keyframes spin { 0%{transform:rotate(0);} 100%{transform:rotate(360deg);} }
+
+/* 列表 */
+.list { padding: 32rpx; display: flex; flex-direction: column; gap: 24rpx; }
+.card { background: #fff; border-radius: 16rpx; padding: 24rpx; display: flex; align-items: center; box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.05); }
+.avatar { width: 96rpx; height: 96rpx; border-radius: 50%; margin-right: 24rpx; background: #F3F4F6; }
+.info { flex: 1; min-width: 0; }
+.name { display: block; font-size: 32rpx; font-weight: 600; color: #1F2937; margin-bottom: 8rpx; }
+.meta { display: block; font-size: 24rpx; color: #6B7280; }
+.arrow { font-size: 28rpx; color: #9CA3AF; } 

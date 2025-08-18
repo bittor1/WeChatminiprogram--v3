@@ -1,20 +1,34 @@
 {
-    "pages": [
-      "pages/index/index",
-      "pages/detail/detail",
-      "pages/create/create",
-      "pages/about/about",
-      "pages/orders/orders"
-    ],
-    "window": {
-      "backgroundTextStyle": "light",
-      "navigationBarBackgroundColor": "#ffffff",
-      "navigationBarTitleText": "伦敦必吃榜",
-      "navigationBarTextStyle": "black",
-      "backgroundColor": "#f8fafc"
-    },
-    "style": "v2",
-    "sitemapLocation": "sitemap.json",
-    "lazyCodeLoading": "requiredComponents",
-    "cloud": true
+  "pages": [
+    "pages/index/index",
+    "pages/detail/detail",
+    "pages/create/create",
+    "pages/add/add",
+    "pages/about/about",
+    "pages/orders/orders",
+    "pages/my-nominations/my-nominations",
+    "pages/my-votes/my-votes",
+    "pages/sound-settings/sound-settings",
+    "pages/search/search",
+    "pages/report-deed/report-deed",
+    "pages/deeds-wall/deeds-wall"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#ffffff",
+    "navigationBarTitleText": "伦敦必吃榜",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f8fafc"
+  },
+  "usingComponents": {
+    "auth-dialog": "/components/auth-dialog/auth-dialog"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents",
+  "cloud": true,
+  "requiredBackgroundModes": ["audio"],
+  "useExtendedLib": {
+    "weui": true
   }
+}

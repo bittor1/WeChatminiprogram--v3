@@ -33,11 +33,21 @@
               <view class="upload-icon">⬆️</view>
             </view>
             
+            <!-- 创建一个wxs模块来生成样式 -->
+            <wxs module="styleHelper">
+              function getProgressStyle(progress) {
+                return "width:" + progress + "%;";
+              }
+              module.exports = {
+                getProgressStyle: getProgressStyle
+              };
+            </wxs>
+            
             <!-- 进度条 -->
             <view wx:if="{{isProcessing && showProgress}}" class="processing-overlay">
               <view class="processing-progress">
                 <view class="progress-bar">
-                  <view class="progress-fill" style="width:{{processingProgress}}%;"></view>
+                  <view class="progress-fill" style="{{styleHelper.getProgressStyle(processingProgress)}}"></view>
                 </view>
                 <text class="progress-text">处理中... {{processingProgress}}%</text>
               </view>
@@ -112,10 +122,14 @@
       <button 
         class="submit-btn btn btn-primary" 
         bindtap="handleSubmit"
-        disabled="{{!nickname.trim() || !avatar}}"
+        disabled="{{!isFormValid}}"
       >
         提名上榜
       </button>
+      <!-- 调试信息 -->
+      <view class="debug-info" style="font-size: 10px; color: #999; margin-top: 8px; text-align: center;">
+        <text>昵称: {{nickname ? '已填写' : '未填写'}} | 头像: {{avatar ? '已上传' : '未上传'}}</text>
+      </view>
     </view>
     
     <!-- 友情提醒 -->
@@ -143,7 +157,9 @@
   </view>
   
   <!-- 返回按钮 -->
+  <!-- 删除返回按钮
   <view class="back-to-home-btn" bindtap="goBackToHome">
     <text class="back-icon">←</text>
   </view>
+  -->
 </view>

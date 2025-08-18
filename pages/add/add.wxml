@@ -1,2 +1,68 @@
 <!--pages/add/add.wxml-->
-<text>pages/add/add.wxml</text>
+<view class="container">
+  <view class="header">
+    <view class="title">添加朋友到必吃榜</view>
+    <view class="subtitle">让大家投票选出最有魅力的TA</view>
+  </view>
+  
+  <view class="form-container">
+    <view class="form-item">
+      <view class="label">朋友昵称</view>
+      <input class="input" placeholder="输入朋友昵称" value="{{nickname}}" bindinput="onNicknameInput" />
+    </view>
+    
+    <view class="form-item">
+      <view class="label">上传照片/视频</view>
+      <view class="upload-area">
+        <view wx:if="{{!previewImage}}" class="upload-buttons">
+          <view class="upload-btn" bindtap="selectMethod" data-method="camera">
+            <view class="icon">📷</view>
+            <view class="text">拍照</view>
+          </view>
+          <view class="upload-btn" bindtap="selectMethod" data-method="album">
+            <view class="icon">🖼️</view>
+            <view class="text">相册</view>
+          </view>
+          <view class="upload-btn" bindtap="selectMethod" data-method="video">
+            <view class="icon">🎬</view>
+            <view class="text">视频</view>
+          </view>
+        </view>
+        
+        <view wx:if="{{previewImage}}" class="preview-container">
+          <image wx:if="{{fileType === 'image'}}" class="preview-image" src="{{previewImage}}" mode="aspectFill"></image>
+          <video wx:if="{{fileType === 'video'}}" class="preview-video" src="{{previewImage}}" object-fit="cover"></video>
+          <view class="preview-actions">
+            <button class="btn-small" bindtap="cancelPreview">取消</button>
+            <button class="btn-small" type="primary" bindtap="confirmPreview">确认</button>
+          </view>
+        </view>
+      </view>
+    </view>
+    
+    <view wx:if="{{isProcessing}}" class="progress-container">
+      <progress percent="{{processingProgress}}" active stroke-width="3" />
+      <view class="progress-text">正在处理视频...{{processingProgress}}%</view>
+    </view>
+    
+    <view wx:if="{{avatar && previewConfirmed}}" class="avatar-confirmed">
+      <image class="avatar-preview" src="{{avatar}}" mode="aspectFill"></image>
+      <view class="avatar-actions">
+        <button class="btn-small" bindtap="removeAvatar">重新选择</button>
+      </view>
+    </view>
+    
+    <view class="form-item">
+      <button class="submit-btn" type="primary" disabled="{{!nickname || !avatar || isProcessing}}" bindtap="handleSubmit">提交到必吃榜</button>
+    </view>
+    
+    <view class="form-item">
+      <button class="cancel-btn" bindtap="goBackToHome">返回主页</button>
+    </view>
+  </view>
+  
+  <!-- 返回按钮 -->
+  <view class="back-to-home-btn" bindtap="goBackToHome">
+    <text class="back-icon">←</text>
+  </view>
+</view>

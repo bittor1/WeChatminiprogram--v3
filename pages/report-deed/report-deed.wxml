@@ -1,0 +1,73 @@
+<view class="container">
+  <view class="header">
+    <text class="header-title">爆料新事迹</text>
+    <text class="header-subtitle">分享有趣的故事和精彩瞬间</text>
+  </view>
+  
+  <view class="form-container">
+    <view class="form-group">
+      <view class="form-label">选择用户</view>
+      <picker bindchange="onUserChange" range="{{users}}" range-key="name">
+        <view class="picker">
+          <view class="picker-value">{{selectedUser ? selectedUser.name : '请选择用户'}}</view>
+          <view class="picker-arrow">▼</view>
+        </view>
+      </picker>
+    </view>
+    
+    <view class="form-group">
+      <view class="form-label">事迹内容</view>
+      <textarea 
+        class="content-textarea" 
+        placeholder="描述一下发生的有趣事情..." 
+        bindinput="onContentInput"
+        value="{{content}}"
+        maxlength="200"
+      ></textarea>
+      <view class="character-count">{{content.length}}/200</view>
+    </view>
+    
+    <view class="form-group">
+      <view class="form-label">发生地点</view>
+      <input 
+        class="location-input" 
+        placeholder="例如：伦敦 Soho" 
+        bindinput="onLocationInput"
+        value="{{location}}"
+      />
+    </view>
+    
+    <view class="form-group">
+      <view class="form-label">发生日期</view>
+      <picker mode="date" bindchange="onDateChange" value="{{date}}">
+        <view class="picker">
+          <view class="picker-value">{{date || '请选择日期'}}</view>
+          <view class="picker-arrow">▼</view>
+        </view>
+      </picker>
+    </view>
+    
+    <view class="form-group">
+      <view class="form-label">事迹类型</view>
+      <radio-group class="type-group" bindchange="onTypeChange">
+        <label class="type-item">
+          <radio value="success" checked="{{type === 'success'}}" />
+          <text class="type-label">成功事迹</text>
+        </label>
+        <label class="type-item">
+          <radio value="neutral" checked="{{type === 'neutral'}}" />
+          <text class="type-label">普通事迹</text>
+        </label>
+        <label class="type-item">
+          <radio value="fail" checked="{{type === 'fail'}}" />
+          <text class="type-label">失败事迹</text>
+        </label>
+      </radio-group>
+    </view>
+  </view>
+  
+  <view class="action-container">
+    <button class="cancel-button" bindtap="onCancel">取消</button>
+    <button class="submit-button" bindtap="onSubmit" disabled="{{!isFormValid}}">提交爆料</button>
+  </view>
+</view> 

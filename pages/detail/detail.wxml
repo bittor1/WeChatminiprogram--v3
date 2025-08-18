@@ -2,7 +2,7 @@
   <!-- 个人信息卡片 -->
   <view class="profile-card card p-16">
     <view class="profile-avatar-container">
-      <image class="profile-avatar" src="{{userInfo.avatar}}" mode="aspectFill"></image>
+      <image class="profile-avatar" src="{{userInfo.avatar}}" mode="aspectFill" lazy-load="true"></image>
       <view class="rank-tag">#{{userInfo.rank}}</view>
     </view>
     
@@ -30,7 +30,7 @@
       <text class="btn-icon">👎</text>
       <text class="btn-text">减票</text>
     </button>
-    <button class="action-btn btn btn-secondary" bindtap="handleShare">
+    <button class="action-btn btn btn-secondary" open-type="share">
       <text class="btn-icon">↗</text>
       <text class="btn-text">分享</text>
     </button>
@@ -38,26 +38,28 @@
 
   <!-- 音效功能区 -->
   <view class="sound-section card p-16">
-    <button class="sound-btn btn btn-accent-purple" bindtap="playSound">
-      <text class="btn-icon">🎤</text>
-      <text class="btn-text">录制投票音效</text>
-    </button>
-    <button class="record-btn btn btn-secondary" bindtap="recordSound">
-      <text class="btn-icon">✓</text>
-      <text class="btn-text">确认音效</text>
-    </button>
+    <view class="custom-flex-row">
+      <button class="sound-btn btn btn-accent-purple custom-flex-large" bindtap="playSound">
+        <text class="btn-icon">🎤</text>
+        <text class="btn-text">录制投票音效</text>
+      </button>
+      <button class="record-btn btn btn-secondary custom-flex-small" bindtap="recordSound">
+        <text class="btn-icon">✓</text>
+        <text class="btn-text">确认音效</text>
+      </button>
+    </view>
   </view>
 
   <!-- 弹幕输入区 -->
   <view class="danmaku-input-section card p-16">
-    <view class="danmaku-input-row flex gap-12">
+    <view class="custom-flex-row">
       <input 
-        class="danmaku-input input flex-1"
+        class="danmaku-input input custom-flex-large"
         placeholder="发个弹幕调侃一下..." 
         value="{{danmakuText}}" 
         bindinput="onDanmakuInput"
       />
-      <button class="action-btn btn btn-accent-purple" bindtap="sendDanmaku">
+      <button class="action-btn btn btn-accent-purple custom-flex-small" bindtap="sendDanmaku">
         <text class="btn-icon">✈️</text>
         <text class="btn-text">发送</text>
       </button>
@@ -76,7 +78,6 @@
         wx:for="{{achievements}}" 
         wx:key="id"
       >
-        <text class="achievement-icon">{{item.icon}}</text>
         <view class="achievement-content">
           <text class="achievement-text text-body">{{item.content}}</text>
           <view class="achievement-meta flex gap-8">
@@ -97,32 +98,103 @@
   <view class="comments-section card p-16 mb-16">
     <view class="section-header flex items-center mb-16">
       <text class="section-icon">💬</text>
-      <text class="section-title h2">评论区</text>
+      <text class="section-title h2">评论区 ({{commentCount || 0}})</text>
     </view>
     
+    <!-- 评论输入框 -->
+    <view class="comment-input-container mb-16">
+      <input 
+        class="comment-input input" 
+        placeholder="{{replyTo ? '回复 '+replyTo+'...' : '添加评论...'}}" 
+        value="{{commentContent}}"
+        bindinput="onCommentInput" 
+      />
+      <button class="comment-submit-btn btn btn-accent-purple" bindtap="submitComment">
+        <text class="btn-text">发送</text>
+      </button>
+    </view>
+    
+    <!-- 评论列表 -->
     <view class="comments-list">
-      <view class="comment-item" wx:for="{{comments}}" wx:key="id">
-        <view class="comment-avatar">
-          <text>{{item.user[0]}}</text>
-        </view>
-        <view class="comment-content">
-          <view class="comment-header">
-            <text class="comment-user text-body">{{item.user}}</text>
-            <text class="comment-time text-small">{{item.timestamp}}</text>
+      <block wx:if="{{comments.length > 0}}">
+        <!-- 顶级评论 -->
+        <view class="comment-item" wx:for="{{comments}}" wx:key="_id">
+          <view class="comment-user">
+            <image class="comment-avatar" src="{{item.creatorAvatar}}" mode="aspectFill"></image>
+            <view class="comment-user-info">
+              <text class="comment-username">{{item.creatorName}}</text>
+              <text class="comment-time">{{formatTime(item.createTime)}}</text>
+            </view>
           </view>
-          <text class="comment-text text-body">{{item.content}}</text>
+          <view class="comment-content">{{item.content}}</view>
+          <view class="comment-actions">
+            <view class="action-item" bindtap="replyComment" data-id="{{item._id}}" data-name="{{item.creatorName}}">
+              <text class="action-icon">💬</text>
+              <text class="action-text">回复</text>
+            </view>
+            <view class="action-item" bindtap="likeComment" data-id="{{item._id}}">
+              <text class="action-icon">👍</text>
+              <text class="action-text">{{item.likes || 0}}</text>
+            </view>
+          </view>
+          
+          <!-- 子评论列表 -->
+          <view class="replies-container" wx:if="{{item.replies && item.replies.length > 0}}">
+            <block wx:for="{{item.replies}}" wx:for-item="reply" wx:key="_id">
+              <view class="reply-item">
+                <view class="reply-user">
+                  <image class="reply-avatar" src="{{reply.creatorAvatar}}" mode="aspectFill"></image>
+                  <view class="reply-user-info">
+                    <text class="reply-username">{{reply.creatorName}}</text>
+                    <text class="reply-time">{{formatTime(reply.createTime)}}</text>
+                  </view>
+                </view>
+                <view class="reply-content">
+                  <text class="reply-to" wx:if="{{reply.replyTo.userName}}">回复 {{reply.replyTo.userName}}：</text>
+                  {{reply.content}}
+                </view>
+                <view class="reply-actions">
+                  <view class="action-item" bindtap="replyComment" data-id="{{item._id}}" data-name="{{reply.creatorName}}" data-parent="{{reply._id}}">
+                    <text class="action-icon">💬</text>
+                    <text class="action-text">回复</text>
+                  </view>
+                  <view class="action-item" bindtap="likeComment" data-id="{{reply._id}}">
+                    <text class="action-icon">👍</text>
+                    <text class="action-text">{{reply.likes || 0}}</text>
+                  </view>
+                </view>
+              </view>
+            </block>
+            
+            <!-- 查看更多回复 -->
+            <view class="more-replies" wx:if="{{item.replyCount > item.replies.length}}" bindtap="loadMoreReplies" data-id="{{item._id}}">
+              查看更多回复...
+            </view>
+          </view>
         </view>
+      </block>
+      
+      <!-- 加载更多评论 -->
+      <view class="load-more" bindtap="loadMoreComments" wx:if="{{hasMoreComments}}">
+        加载更多评论...
       </view>
       
-      <view class="comment-input-row flex gap-12 mt-16">
-        <input class="comment-input input flex-1" placeholder="写评论..." bindinput="onCommentInput" value="{{commentText}}"/>
-        <button class="action-btn btn btn-accent-purple" bindtap="sendComment">
-          <text class="btn-icon">✈️</text>
-          <text class="btn-text">发送</text>
-        </button>
+      <!-- 暂无评论 -->
+      <view class="empty-comments" wx:if="{{comments.length === 0}}">
+        暂无评论，快来发表第一条评论吧！
       </view>
     </view>
   </view>
+
+  <!-- 创建一个wxs模块来生成弹幕样式 -->
+  <wxs module="danmakuStyle">
+    function getStyle(top, duration) {
+      return "top:" + top + "%; animation-duration:" + duration + "ms; animation-name:danmaku;";
+    }
+    module.exports = {
+      getStyle: getStyle
+    };
+  </wxs>
 
   <!-- 弹幕层 -->
   <view class="danmaku-layer">
@@ -130,49 +202,22 @@
       class="danmaku-item" 
       wx:for="{{danmakuList}}" 
       wx:key="id"
-      style="top: {{item.top}}%; animation-duration: {{item.duration}}ms;"
+      style="{{danmakuStyle.getStyle(item.top, item.duration)}}"
     >
       {{item.text}}
     </view>
   </view>
   
   <!-- 弹窗 -->
-  <view class="modal-overlay" wx:if="{{showModal}}" bindtap="closeModal">
+  <view class="modal-overlay" wx:if="{{modalType !== ''}}" bindtap="closeModal">
     <view class="modal-content card" catchtap="stopPropagation">
-      <view class="modal-header flex justify-between p-16">
+      <button class="modal-close-btn" bindtap="closeModal">✕</button>
+      
+      <view class="modal-header">
         <text class="modal-title h2">{{modalTitle}}</text>
-        <button class="modal-close-btn" bindtap="closeModal">✕</button>
       </view>
       
       <view class="modal-body p-16">
-        <!-- 投票弹窗 -->
-        <view wx:if="{{modalType === 'vote'}}" class="vote-modal flex flex-col gap-16">
-          <view class="custom-vote-section">
-            <text class="section-label h2 mb-8">自定义投票数</text>
-            <view class="flex items-center gap-12 mb-16">
-              <view class="vote-count-control flex items-center">
-                <button class="vote-count-btn" bindtap="decreaseCustomVotes">-</button>
-                <input class="vote-count-input" type="number" value="{{customVoteCount}}" bindinput="onCustomVoteInput"/>
-                <button class="vote-count-btn" bindtap="increaseCustomVotes">+</button>
-              </view>
-              <text class="vote-price text-body">¥{{customVoteCount}}.00 ({{customVoteCount}}票)</text>
-            </view>
-            <button class="modal-btn btn btn-accent-green" bindtap="buyCustomVotes">
-              确认投票
-            </button>
-          </view>
-        </view>
-        
-        <!-- 减票弹窗 -->
-        <view wx:if="{{modalType === 'downvote'}}" class="vote-modal flex flex-col gap-16">
-          <button class="modal-btn btn btn-accent-green" bindtap="buyDownVotes" data-type="pay">
-            微信支付 ¥2.00 (减1票)
-          </button>
-          <button class="modal-btn btn btn-secondary" bindtap="buyDownVotes" data-type="ad">
-            观看广告 ¥1.00 (减1票)
-          </button>
-        </view>
-        
         <!-- 事迹弹窗 -->
         <view wx:if="{{modalType === 'achievement'}}" class="achievement-modal flex flex-col gap-16">
           <textarea 
@@ -197,5 +242,8 @@
   <view class="back-to-home-btn" bindtap="goBackToHome">
     <text class="back-icon">←</text>
   </view>
+  
+  <!-- 登录授权弹窗 -->
+  <auth-dialog id="authDialog"></auth-dialog>
 </view>
 

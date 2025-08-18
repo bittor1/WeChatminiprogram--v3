@@ -6,7 +6,7 @@
 
 /* 头部区域 */
 .header-section {
-  padding-top: 40px;
+  padding-top: 20px; /* 恢复原来的顶部间距 */
   position: relative; /* 为了绝对定位头像 */
 }
 
@@ -29,7 +29,7 @@
 /* 用户头像 - 绝对固定在右上角 */
 .top-right-avatar-fixed {
   position: fixed;
-  top: 15px; /* 调整位置，向上移动 */
+  top: 15px; /* 恢复原来的位置 */
   right: 20px;
   width: 52px;
   height: 52px;
@@ -82,11 +82,126 @@
 .stats-card {
   border-radius: 16px;
   padding: 20px;
+  margin-bottom: 16px; /* 添加底部间距，确保与下方内容有分隔 */
 }
 
-.stat-icon {
-  font-size: 24px;
-  margin-bottom: 4px;
+/* 统计项目 */
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-number {
+  font-size: 28px;
+  font-weight: bold;
+  color: #1F2937;
+  margin-bottom: 4px; /* 确保数字和标签之间有间距 */
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #6B7280;
+}
+
+/* 加载状态 */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.loading-animation {
+  font-size: 40px;
+  color: #10B981;
+  margin-bottom: 16px;
+  animation: spin 1.2s linear infinite;
+}
+
+.loading-text {
+  font-size: 16px;
+  color: #6B7280;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* 错误状态 */
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.error-icon {
+  font-size: 40px;
+  margin-bottom: 16px;
+  color: #EF4444;
+}
+
+.error-text {
+  font-size: 18px;
+  font-weight: 500;
+  color: #6B7280;
+  margin-bottom: 24px;
+}
+
+.retry-btn {
+  padding: 8px 24px;
+  background-color: #10B981;
+  color: white;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+/* 空数据状态 */
+.empty-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  color: #9CA3AF;
+}
+
+.empty-title {
+  font-size: 18px;
+  font-weight: 500;
+  color: #4B5563;
+  margin-bottom: 8px;
+}
+
+.empty-text {
+  font-size: 16px;
+  color: #6B7280;
+  margin-bottom: 24px;
+}
+
+.action-btn {
+  padding: 10px 24px;
+  background-color: #10B981;
+  color: white;
+  border-radius: 8px;
+  font-size: 16px;
 }
 
 /* 排行榜列表 */
@@ -187,10 +302,16 @@
   line-height: 1.2;
 }
 
+/* 票数增长率 */
+.vote-trend {
+  font-size: 12px;
+  font-weight: 500;
+  margin-top: 4px;
+}
+
 /* 通用浮动按钮样式 */
 .floating-btn {
   position: fixed;
-  bottom: 20px;
   height: 44px;
   border-radius: 999px;
   display: flex;
@@ -203,6 +324,7 @@
 /* 关于作者按钮 (左下角) */
 .about-btn {
   left: 20px;
+  bottom: 20px;
   background: #FFFFFF;
   color: #6B7280;
   border: 1px solid #E5E7EB;
@@ -211,6 +333,7 @@
 /* 提名朋友按钮 (右下角) */
 .add-btn {
   right: 20px;
+  bottom: 20px;
   background: #10B981;
   color: #FFFFFF;
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);

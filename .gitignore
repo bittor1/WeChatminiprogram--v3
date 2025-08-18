@@ -1,14 +1,34 @@
-# Windows
-[Dd]esktop.ini
-Thumbs.db
-$RECYCLE.BIN/
+# React/Next.js components
+/components/theme-provider.tsx
+/components/ui/
+/app/layout.tsx
+/app/page.tsx
+/hooks/
+/lib/utils.ts
 
-# macOS
-.DS_Store
-.fseventsd
-.Spotlight-V100
-.TemporaryItems
-.Trashes
+# Search page
+/pages/search/
 
-# Node.js
-node_modules/
+# Next.js config files
+/next.config.mjs
+/tailwind.config.ts
+/postcss.config.mjs
+/tsconfig.json
+/components.json
+/app/globals.css
+
+# npm files
+/node_modules/
+/package.json
+/package-lock.json
+/pnpm-lock.yaml
+
+# Private config
+/project.private.config.json
+
+# Cloud function node_modules (cloud functions should be uploaded separately)
+/cloudfunctions/*/node_modules/
+
+# Next public assets
+/styles/
+/public/
