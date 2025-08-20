@@ -1,7 +1,7 @@
 {
-  "name": "search",
+  "name": "login",
   "version": "1.0.0",
-  "description": "搜索功能云函数",
+  "description": "处理小程序扫码登录",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

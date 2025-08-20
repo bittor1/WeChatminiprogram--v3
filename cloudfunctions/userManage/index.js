@@ -1,114 +1,142 @@
-const cloud = require('wx-server-sdk');
-
+// 云函数入口文件
+const cloud = require('wx-server-sdk')
 cloud.init({
-  env: 'cloud1-2g2sby6z920b76cb'
-});
-
-const db = cloud.database();
+  env: cloud.DYNAMIC_CURRENT_ENV
+})
 
 // 云函数入口函数
 exports.main = async (event, context) => {
-  const wxContext = cloud.getWXContext();
-  const openid = wxContext.OPENID;
-  const { action, userData } = event;
-
-  switch (action) {
-    case 'login': {
-      // userData now contains { nickname: '...', avatarUrl: 'cloud://...' }
-      return login(openid, userData);
-    }
-    case 'getUserInfo': {
-      return getUserInfo(openid);
-    }
-    default: {
+  const wxContext = cloud.getWXContext()
+  const openid = wxContext.OPENID
+  const db = cloud.database()
+  
+  // 根据action参数执行不同操作
+  switch(event.action) {
+    case 'saveUserInfo':
+      return await saveUserInfo(db, event, openid);
+    case 'getUserInfo':
+      return await getUserInfo(db, openid);
+    default:
       return {
-        success: false,
-        message: '未知的操作类型'
+        code: 400,
+        msg: '未知的操作类型'
+      }
+  }
+}
+
+/**
+ * 保存用户信息
+ * @param {object} db 数据库实例
+ * @param {object} event 事件对象
+ * @param {string} openid 用户openid
+ */
+async function saveUserInfo(db, event, openid) {
+  try {
+    // 使用传入的openid或当前用户的openid
+    const userOpenid = event.openid || openid;
+    
+    if (!userOpenid) {
+      return {
+        code: 400,
+        msg: '缺少用户标识'
       };
     }
-  }
-};
-
-// 用户登录或注册
-async function login(openid, userData) {
-  try {
-    const users = db.collection('users');
-    const userResult = await users.where({
-      _openid: openid
+    
+    // 获取用户信息
+    const userInfo = event.userInfo || {};
+    
+    // 查询用户是否已存在
+    const userResult = await db.collection('users').where({
+      _openid: userOpenid
     }).get();
-
-    let userId;
-
-    if (userResult.data.length > 0) {
-      // 用户已存在，更新用户信息
-      userId = userResult.data[0]._id;
-      await users.doc(userId).update({
+    
+    let userData = null;
+    
+    if (userResult.data && userResult.data.length > 0) {
+      // 用户已存在，更新信息
+      userData = userResult.data[0];
+      
+      await db.collection('users').doc(userData._id).update({
         data: {
-          name: userData.nickname,
-          avatarUrl: userData.avatarUrl, // This is now a cloud fileID
-          lastLoginTime: new Date()
+          nickname: userInfo.nickName || userData.nickname,
+          avatarUrl: userInfo.avatarUrl || userData.avatarUrl,
+          gender: userInfo.gender !== undefined ? userInfo.gender : userData.gender,
+          lastLoginTime: db.serverDate()
         }
       });
+      
+      // 重新获取更新后的用户信息
+      const updatedUser = await db.collection('users').doc(userData._id).get();
+      userData = updatedUser.data;
     } else {
       // 用户不存在，创建新用户
       const newUser = {
-        _openid: openid,
-        name: userData.nickname,
-        avatarUrl: userData.avatarUrl, // This is a cloud fileID
+        _openid: userOpenid,
+        nickname: userInfo.nickName || '微信用户',
+        avatarUrl: userInfo.avatarUrl || '/images/placeholder-user.jpg',
+        gender: userInfo.gender || 0,
         votes: 0,
         nominationsCount: 0,
         votesCount: 0,
         receivedVotesCount: 0,
-        createTime: new Date(),
-        lastLoginTime: new Date()
+        createTime: db.serverDate(),
+        lastLoginTime: db.serverDate()
       };
-      const addUserResult = await users.add({
+      
+      const addResult = await db.collection('users').add({
         data: newUser
       });
-      userId = addUserResult._id;
+      
+      userData = {
+        _id: addResult._id,
+        ...newUser
+      };
     }
     
-    const finalUserInfo = (await users.doc(userId).get()).data;
-
     return {
-      success: true,
-      user: finalUserInfo, // 改为 user 字段以匹配客户端期望
-      data: finalUserInfo, // 保留 data 字段以兼容其他可能依赖此字段的代码
-      message: '登录成功'
+      code: 200,
+      msg: '保存用户信息成功',
+      userInfo: userData
     };
   } catch (err) {
-    console.error('登录或注册失败:', err);
+    console.error('保存用户信息失败:', err);
     return {
-      success: false,
-      message: '登录失败'
+      code: 500,
+      msg: '保存用户信息失败',
+      error: err.message || err
     };
   }
 }
 
-// 获取用户信息
-async function getUserInfo(openid) {
+/**
+ * 获取用户信息
+ * @param {object} db 数据库实例
+ * @param {string} openid 用户openid
+ */
+async function getUserInfo(db, openid) {
   try {
-    const users = db.collection('users');
-    const userResult = await users.where({
+    const userResult = await db.collection('users').where({
       _openid: openid
     }).get();
-
-    if (userResult.data.length > 0) {
+    
+    if (userResult.data && userResult.data.length > 0) {
       return {
-        success: true,
-        data: userResult.data[0]
+        code: 200,
+        msg: '获取用户信息成功',
+        userInfo: userResult.data[0]
       };
     } else {
       return {
-        success: false,
-        message: '用户不存在'
+        code: 404,
+        msg: '用户不存在'
       };
     }
   } catch (err) {
     console.error('获取用户信息失败:', err);
     return {
-      success: false,
-      message: '获取用户信息失败'
+      code: 500,
+      msg: '获取用户信息失败',
+      error: err.message || err
     };
   }
-}
+} 

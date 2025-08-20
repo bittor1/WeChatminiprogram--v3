@@ -195,7 +195,7 @@ Page({
     return {
       title: '定制你的专属伦敦必吃榜音效',
       path: '/pages/sound-settings/sound-settings',
-      imageUrl: '/public/placeholder.jpg'
+      imageUrl: '/placeholder.jpg'
     };
   },
   
@@ -204,7 +204,7 @@ Page({
     return {
       title: '定制你的专属伦敦必吃榜音效',
       query: '',
-      imageUrl: '/public/placeholder.jpg'
+      imageUrl: '/placeholder.jpg'
     };
   }
 }); 

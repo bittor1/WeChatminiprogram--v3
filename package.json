@@ -5,8 +5,15 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev",
-    "lint": "next lint",
-    "start": "next start"
+    "lint": "eslint . && stylelint \"**/*.wxss\"",
+    "lint:wxml": "eslint \"**/*.wxml\"",
+    "audit:wxml:func": "rg -n -P \"{{[^}]*\\\\b[a-zA-Z_$]\\\\w*\\s*\\([^}{]*\\)[^}]*}}\" -g \"!{node_modules,.git,dist,build,.next,coverage,tmp}\" -g \"*.wxml\" || exit 0",
+    "audit:wxml:methods": "rg -n -P \"{{[^}]*\\\\.(trim|replace|slice|substr|substring|split|join|map|filter|reduce|toFixed|toUpperCase|toLowerCase|toLocaleString)\\s*\\([^}]*\\)[^}]*}}\" -g \"!{node_modules,.git,dist,build,.next,coverage,tmp}\" -g \"*.wxml\" || exit 0",
+    "audit:wxs": "rg -n -P \"^\\s*(let|const)\\s\" -g \"*.wxs\" -g \"!{node_modules,.git,dist,build}\" || exit 0",
+    "audit": "npm run lint && npm run lint:wxml && npm run audit:wxml:func && npm run audit:wxml:methods && npm run audit:wxs",
+    "start": "next start",
+    "test": "jest",
+    "wx:check": "miniprogram-ci check-code-quality --pp ./ --pkp ./private.wx29cb754190a5c042.key --appid wx29cb754190a5c042 --save-path ./ci-report.json"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -49,6 +56,7 @@
     "next": "15.2.4",
     "next-themes": "^0.4.4",
     "path": "latest",
+    "qrcode": "^1.5.4",
     "react": "^18.2.0",
     "react-day-picker": "9.8.0",
     "react-dom": "^18.2.0",
@@ -65,8 +73,36 @@
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/wechat-miniprogram": "^3.4.8",
+    "@wxml/parser": "^0.4.0",
+    "eslint": "^8.57.1",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-wxml": "^0.8.0",
+    "globals": "^16.3.0",
+    "jest": "^30.0.5",
+    "miniprogram-api-typings": "^4.1.0",
+    "miniprogram-ci": "^2.1.26",
+    "miniprogram-simulate": "^1.6.1",
     "postcss": "^8.5",
+    "stylelint": "^16.23.1",
+    "stylelint-wxss": "^0.2.1",
     "tailwindcss": "^3.4.17",
     "typescript": "^5"
-  }
+  },
+  "description": "",
+  "main": "app.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bittor1/wechat-miniprogram-v1.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/bittor1/wechat-miniprogram-v1/issues"
+  },
+  "homepage": "https://github.com/bittor1/wechat-miniprogram-v1#readme"
 }

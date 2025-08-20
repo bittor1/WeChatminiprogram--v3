@@ -16,19 +16,12 @@ Page({
     }
   },
 
-  // 返回首页
-  goBackToHome() {
-    wx.switchTab({
-      url: '/pages/index/index',
-    })
-  },
-
   // 分享给好友
   onShareAppMessage() {
     return {
       title: '伦敦必吃榜 - 一个有趣的社交排行榜',
       path: '/pages/index/index',
-      imageUrl: '/public/placeholder.jpg'
+      imageUrl: '/placeholder.jpg'
     }
   },
   
@@ -37,7 +30,7 @@ Page({
     return {
       title: '来看看这个有趣的伦敦必吃榜，颠覆你的社交体验！',
       query: '',
-      imageUrl: '/public/placeholder.jpg'
+      imageUrl: '/placeholder.jpg'
     }
   }
 })

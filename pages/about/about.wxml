@@ -44,7 +44,7 @@
     <!-- 二维码 -->
     <view class="qrcode-section card p-16 mb-16 flex flex-col items-center">
       <view class="qrcode-container p-16">
-        <image class="qrcode-image" src="/public/images/wechat_qrcode.jpg" mode="aspectFit" show-menu-by-longpress="true"></image>
+        <image class="qrcode-image" src="/images/wechat_qrcode.jpg" mode="aspectFit" show-menu-by-longpress="true"></image>
       </view>
       <text class="qrcode-text text-body">扫码辱骂开发者</text>
       <text class="qrcode-tip text-small">(长按识别二维码)</text>
@@ -52,8 +52,5 @@
     </view>
   </view>
   
-  <!-- 返回按钮 -->
-  <view class="back-to-home-btn" bindtap="goBackToHome">
-    <text class="back-icon">←</text>
-  </view>
+  <!-- 删除返回按钮 -->
 </view>

@@ -20,7 +20,6 @@ Page({
   },
 
   onLoad() {
-    this.authDialog = this.selectComponent("#authDialog");
     // 首次加载时强制刷新数据，而不是使用可能为空的缓存数据
     this.refreshData();
     
@@ -182,22 +181,41 @@ Page({
   
   // 跳转到创建页
   goToCreate() {
+    console.log('跳转到创建页');
     wx.navigateTo({
-      url: '/pages/create/create'
+      url: '../create/create',
+      fail: (err) => {
+        console.error('跳转到创建页失败:', err);
+        wx.showToast({
+          title: '页面跳转失败',
+          icon: 'none'
+        });
+      }
     });
   },
   
   // 跳转到添加页
   goToAdd() {
     wx.navigateTo({
-      url: '/pages/add/add'
+      url: '../add/add',
+      fail: (err) => {
+        console.error('跳转到添加页失败:', err);
+      }
     });
   },
   
   // 跳转到关于页
   goToAbout() {
+    console.log('跳转到关于页');
     wx.navigateTo({
-      url: '/pages/about/about'
+      url: '../about/about',
+      fail: (err) => {
+        console.error('跳转到关于页失败:', err);
+        wx.showToast({
+          title: '页面跳转失败',
+          icon: 'none'
+        });
+      }
     });
   },
   
@@ -240,61 +258,166 @@ Page({
       });
     };
 
-    // 检查是否已登录 (现在我们检查token)
+    // 检查是否已登录
     if (app.checkUserLogin()) {
       // 如果已登录，直接打开抽屉
       openDrawerAction();
     } else {
-      // 检查是否已经拒绝过授权
-      const authFailed = wx.getStorageSync('authFailed');
-      
-      // 如果之前拒绝过授权，先提示用户
-      if (authFailed) {
-        wx.showModal({
-          title: '需要授权',
-          content: '需要您的授权才能继续操作，是否重新授权？',
-          success: (res) => {
-            if (res.confirm) {
-              // 用户确认，显示登录弹窗
-              this.authDialog.showDialog({
-                success: (userInfo) => {
-                  console.log('授权登录成功:', userInfo);
-                  this.setData({ userInfo: userInfo });
-                  wx.setStorageSync('authFailed', false); // 重置授权状态
-                  openDrawerAction();
-                },
-                fail: (err) => {
-                  console.error('授权登录失败:', err);
-                  wx.setStorageSync('authFailed', true); // 记录失败状态
-                  wx.showToast({
-                    title: '需要授权才能继续',
-                    icon: 'none'
-                  });
-                }
+      // 直接调用getUserProfile，因为这里仍在用户点击事件的直接回调中
+      wx.getUserProfile({
+        desc: '用于完善用户资料',
+        success: (profileRes) => {
+          console.log('获取用户信息成功:', profileRes);
+          
+          // 显示加载提示
+          wx.showLoading({
+            title: '登录中...',
+            mask: true
+          });
+          
+          // 调用微信登录获取code
+          wx.login({
+            success: (loginRes) => {
+              if (loginRes.code) {
+                console.log('获取登录code成功:', loginRes.code);
+                
+                // 调用云函数进行登录
+                wx.cloud.callFunction({
+                  name: 'login',
+                  data: {
+                    code: loginRes.code
+                  },
+                  success: (res) => {
+                    console.log('云函数登录成功:', res);
+                    
+                    if (res.result && res.result.code === 200) {
+                      // 将用户信息保存到云数据库
+                      this.saveUserInfo(res.result.openid, profileRes.userInfo, openDrawerAction);
+                    } else {
+                      wx.hideLoading();
+                      wx.showToast({
+                        title: '登录失败',
+                        icon: 'none'
+                      });
+                    }
+                  },
+                  fail: (err) => {
+                    console.error('云函数登录失败:', err);
+                    wx.hideLoading();
+                    wx.showToast({
+                      title: '登录失败',
+                      icon: 'none'
+                    });
+                  }
+                });
+              } else {
+                console.error('获取登录code失败:', loginRes);
+                wx.hideLoading();
+                wx.showToast({
+                  title: '登录失败',
+                  icon: 'none'
+                });
+              }
+            },
+            fail: (err) => {
+              console.error('wx.login调用失败:', err);
+              wx.hideLoading();
+              wx.showToast({
+                title: '登录失败',
+                icon: 'none'
               });
             }
+          });
+        },
+        fail: (err) => {
+          console.error('获取用户信息失败:', err);
+          
+          // 用户拒绝授权，显示提示
+          wx.showToast({
+            title: '需要授权才能继续',
+            icon: 'none'
+          });
+        }
+      });
+    }
+  },
+  
+  // 获取用户个人信息
+  getUserProfile(openid, callback) {
+    wx.getUserProfile({
+      desc: '用于完善用户资料',
+      success: (profileRes) => {
+        console.log('获取用户信息成功:', profileRes);
+        
+        // 将用户信息保存到云数据库
+        this.saveUserInfo(openid, profileRes.userInfo, callback);
+      },
+      fail: (err) => {
+        console.error('获取用户信息失败:', err);
+        
+        // 即使获取用户信息失败，也可以使用默认信息创建用户
+        this.saveUserInfo(openid, {
+          nickName: '微信用户',
+          avatarUrl: '/images/placeholder-user.jpg',
+          gender: 0
+        }, callback);
+      }
+    });
+  },
+  
+  // 保存用户信息到云数据库
+  saveUserInfo(openid, userInfo, callback) {
+    wx.cloud.callFunction({
+      name: 'userManage',
+      data: {
+        action: 'saveUserInfo',
+        openid: openid,
+        userInfo: userInfo
+      },
+      success: (res) => {
+        console.log('保存用户信息成功:', res);
+        wx.hideLoading();
+        
+        if (res.result && res.result.code === 200) {
+          // 保存用户信息到本地
+          wx.setStorageSync('userInfo', res.result.userInfo);
+          
+          // 更新全局用户信息
+          const app = getApp();
+          if (app && app.globalData) {
+            app.globalData.userInfo = res.result.userInfo;
           }
-        });
-      } else {
-        // 首次请求授权，直接显示登录弹窗
-        this.authDialog.showDialog({
-          success: (userInfo) => {
-            console.log('授权登录成功:', userInfo);
-            this.setData({ userInfo: userInfo });
-            wx.setStorageSync('authFailed', false); // 记录成功状态
-            openDrawerAction();
-          },
-          fail: (err) => {
-            console.error('授权登录失败:', err);
-            wx.setStorageSync('authFailed', true); // 记录失败状态
-            wx.showToast({
-              title: '需要授权才能继续',
-              icon: 'none'
-            });
+          
+          // 更新页面数据
+          this.setData({
+            userInfo: res.result.userInfo
+          });
+          
+          // 执行回调函数（打开抽屉）
+          if (typeof callback === 'function') {
+            callback();
           }
+          
+          wx.showToast({
+            title: '登录成功',
+            icon: 'success'
+          });
+        } else {
+          wx.showToast({
+            title: '登录失败',
+            icon: 'none'
+          });
+        }
+      },
+      fail: (err) => {
+        console.error('保存用户信息失败:', err);
+        wx.hideLoading();
+        wx.showToast({
+          title: '登录失败',
+          icon: 'none'
         });
       }
-    }
+    });
   },
   
   // 调用用户登录云函数

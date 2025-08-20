@@ -52,7 +52,7 @@ async function addComment(data, userId) {
       // 如果用户不存在，使用默认值
       userInfo = {
         name: '用户',
-        avatar: '/public/placeholder-user.jpg'
+        avatar: '/images/placeholder-user.jpg'
       };
     }
   } catch (error) {
@@ -60,7 +60,7 @@ async function addComment(data, userId) {
     // 使用默认值继续
     userInfo = {
       name: '用户',
-      avatar: '/public/placeholder-user.jpg'
+      avatar: '/images/placeholder-user.jpg'
     };
   }
   
@@ -70,7 +70,7 @@ async function addComment(data, userId) {
     content: data.content,
     creatorId: userId,
     creatorName: userInfo.name || '用户',
-    creatorAvatar: userInfo.avatar || '/public/placeholder-user.jpg',
+    creatorAvatar: userInfo.avatar || '/images/placeholder-user.jpg',
     parentId: null,
     rootId: null,
     replyTo: { userId: null, userName: null },
@@ -120,7 +120,7 @@ async function replyComment(data, userId) {
     
     const userInfo = userResult.data.length > 0 ? userResult.data[0] : {
       name: '用户',
-      avatar: '/public/placeholder-user.jpg'
+      avatar: '/images/placeholder-user.jpg'
     };
     
     // 确定根评论ID
@@ -132,7 +132,7 @@ async function replyComment(data, userId) {
       content: data.content,
       creatorId: userId,
       creatorName: userInfo.name || '用户',
-      creatorAvatar: userInfo.avatar || '/public/placeholder-user.jpg',
+      creatorAvatar: userInfo.avatar || '/images/placeholder-user.jpg',
       parentId: data.parentId,
       rootId: rootId,
       replyTo: {
@@ -385,7 +385,7 @@ async function createCommentNotification(nominationId, commenterId) {
     const nomination = nominationResult.data;
     const commenter = commenterResult.data.length > 0 ? commenterResult.data[0] : {
       name: '用户',
-      avatar: '/public/placeholder-user.jpg'
+      avatar: '/images/placeholder-user.jpg'
     };
     
     // 如果评论者不是提名者，则发送通知
@@ -398,7 +398,7 @@ async function createCommentNotification(nominationId, commenterId) {
             receiverId: nomination.creatorId,
             senderId: commenterId,
             senderName: commenter.name || '用户',
-            senderAvatar: commenter.avatar || '/public/placeholder-user.jpg',
+            senderAvatar: commenter.avatar || '/images/placeholder-user.jpg',
             type: 'comment',
             content: `${commenter.name || '用户'} 评论了你的提名`,
             nominationId: nominationId,
@@ -425,7 +425,7 @@ async function createReplyNotification(nominationId, replyerId, receiverId, comm
     const nomination = nominationResult.data;
     const replier = replierResult.data.length > 0 ? replierResult.data[0] : {
       name: '用户',
-      avatar: '/public/placeholder-user.jpg'
+      avatar: '/images/placeholder-user.jpg'
     };
     
     // 如果回复者不是被回复者，则发送通知
@@ -438,7 +438,7 @@ async function createReplyNotification(nominationId, replyerId, receiverId, comm
             receiverId: receiverId,
             senderId: replyerId,
             senderName: replier.name || '用户',
-            senderAvatar: replier.avatar || '/public/placeholder-user.jpg',
+            senderAvatar: replier.avatar || '/images/placeholder-user.jpg',
             type: 'reply',
             content: `${replier.name || '用户'} 回复了你的评论`,
             relatedId: commentId,

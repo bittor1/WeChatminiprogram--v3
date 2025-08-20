@@ -269,6 +269,160 @@ Component({
           }
         }
       });
+    },
+
+    // 使用微信官方登录方式替代扫码登录
+    openScanLogin() {
+      // 关闭用户中心抽屉
+      this.hideDrawer();
+      
+      // 直接调用getUserProfile，因为这里仍在用户点击事件的直接回调中
+      wx.getUserProfile({
+        desc: '用于完善用户资料',
+        success: (profileRes) => {
+          console.log('获取用户信息成功:', profileRes);
+          
+          // 显示加载提示
+          wx.showLoading({
+            title: '登录中...',
+            mask: true
+          });
+          
+          // 调用微信登录获取code
+          wx.login({
+            success: (loginRes) => {
+              if (loginRes.code) {
+                console.log('获取登录code成功:', loginRes.code);
+                
+                // 调用云函数进行登录
+                wx.cloud.callFunction({
+                  name: 'login',
+                  data: {
+                    code: loginRes.code
+                  },
+                  success: (res) => {
+                    console.log('云函数登录成功:', res);
+                    
+                    if (res.result && res.result.code === 200) {
+                      // 将用户信息保存到云数据库
+                      this.saveUserInfo(res.result.openid, profileRes.userInfo);
+                    } else {
+                      wx.hideLoading();
+                      wx.showToast({
+                        title: '登录失败',
+                        icon: 'none'
+                      });
+                    }
+                  },
+                  fail: (err) => {
+                    console.error('云函数登录失败:', err);
+                    wx.hideLoading();
+                    wx.showToast({
+                      title: '登录失败',
+                      icon: 'none'
+                    });
+                  }
+                });
+              } else {
+                console.error('获取登录code失败:', loginRes);
+                wx.hideLoading();
+                wx.showToast({
+                  title: '登录失败',
+                  icon: 'none'
+                });
+              }
+            },
+            fail: (err) => {
+              console.error('wx.login调用失败:', err);
+              wx.hideLoading();
+              wx.showToast({
+                title: '登录失败',
+                icon: 'none'
+              });
+            }
+          });
+        },
+        fail: (err) => {
+          console.error('获取用户信息失败:', err);
+          
+          // 用户拒绝授权，显示提示
+          wx.showToast({
+            title: '需要授权才能继续',
+            icon: 'none'
+          });
+        }
+      });
+    },
+    
+    // 获取用户个人信息
+    getUserProfile(openid) {
+      wx.getUserProfile({
+        desc: '用于完善用户资料',
+        success: (profileRes) => {
+          console.log('获取用户信息成功:', profileRes);
+          
+          // 将用户信息保存到云数据库
+          this.saveUserInfo(openid, profileRes.userInfo);
+        },
+        fail: (err) => {
+          console.error('获取用户信息失败:', err);
+          
+          // 即使获取用户信息失败，也可以使用默认信息创建用户
+          this.saveUserInfo(openid, {
+            nickName: '微信用户',
+            avatarUrl: '/images/placeholder-user.jpg',
+            gender: 0
+          });
+        }
+      });
+    },
+    
+    // 保存用户信息到云数据库
+    saveUserInfo(openid, userInfo) {
+      wx.cloud.callFunction({
+        name: 'userManage',
+        data: {
+          action: 'saveUserInfo',
+          openid: openid,
+          userInfo: userInfo
+        },
+        success: (res) => {
+          console.log('保存用户信息成功:', res);
+          wx.hideLoading();
+          
+          if (res.result && res.result.code === 200) {
+            // 保存用户信息到本地
+            wx.setStorageSync('userInfo', res.result.userInfo);
+            
+            // 更新全局用户信息
+            const app = getApp();
+            if (app && app.globalData) {
+              app.globalData.userInfo = res.result.userInfo;
+            }
+            
+            // 触发登录成功事件
+            this.triggerEvent('login', { userInfo: res.result.userInfo });
+            
+            wx.showToast({
+              title: '登录成功',
+              icon: 'success'
+            });
+          } else {
+            wx.showToast({
+              title: '登录失败',
+              icon: 'none'
+            });
+          }
+        },
+        fail: (err) => {
+          console.error('保存用户信息失败:', err);
+          wx.hideLoading();
+          wx.showToast({
+            title: '登录失败',
+            icon: 'none'
+          });
+        }
+      });
     }
   }
 }) 

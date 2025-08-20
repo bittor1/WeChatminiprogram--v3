@@ -46,7 +46,7 @@
   },
   "appid": "wx29cb754190a5c042",
   "projectname": "伦敦必吃榜",
-  "libVersion": "2.22.0",
+  "libVersion": "3.9.0",
   "simulatorType": "wechat",
   "simulatorPluginLibVersion": {},
   "cloudfunctionTemplateRoot": "cloudfunctionTemplate/",
@@ -55,67 +55,46 @@
   "packOptions": {
     "ignore": [
       {
-        "type": "folder",
-        "value": "components/ui"
+        "value": "components/ui",
+        "type": "folder"
       },
       {
-        "type": "folder",
-        "value": "hooks"
+        "value": "hooks",
+        "type": "folder"
       },
       {
-        "type": "folder",
-        "value": "app"
+        "value": "app",
+        "type": "folder"
       },
       {
-        "type": "folder",
-        "value": "styles"
+        "value": "styles",
+        "type": "folder"
       },
       {
-        "type": "folder",
-        "value": "lib"
+        "value": "lib",
+        "type": "folder"
       },
       {
-        "type": "folder",
-        "value": "pages/search"
+        "value": "components/theme-provider.tsx",
+        "type": "file"
       },
       {
-        "type": "file",
-        "value": "components/theme-provider.tsx"
+        "value": "next.config.mjs",
+        "type": "file"
       },
       {
-        "type": "file",
-        "value": "next.config.mjs"
+        "value": "tailwind.config.ts",
+        "type": "file"
       },
       {
-        "type": "file",
-        "value": "tailwind.config.ts"
+        "value": "postcss.config.mjs",
+        "type": "file"
       },
       {
-        "type": "file",
-        "value": "postcss.config.mjs"
-      },
-      {
-        "type": "file",
-        "value": "tsconfig.json"
-      },
-      {
-        "type": "file",
-        "value": "components.json"
-      },
-      {
-        "type": "file",
-        "value": "package.json"
-      },
-      {
-        "type": "file",
-        "value": "package-lock.json"
-      },
-      {
-        "type": "file",
-        "value": "pnpm-lock.yaml"
+        "value": "tsconfig.json",
+        "type": "file"
       }
-    ],
-    "include": []
+    ]
   },
   "editorSetting": {
     "tabIndent": "insertSpaces",

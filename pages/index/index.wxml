@@ -111,13 +111,13 @@
   </view>
   
   <!-- 悬浮关于按钮 (左下角) -->
-  <view class="floating-btn about-btn" bindtap="goToAbout">
+  <view class="floating-btn about-btn" hover-class="btn-hover" catch:tap="goToAbout">
     <text class="btn-icon">ℹ️</text>
     <text class="btn-text">辱骂作者</text>
   </view>
   
   <!-- 悬浮添加按钮 (右下角) -->
-  <view class="floating-btn add-btn" bindtap="goToCreate">
+  <view class="floating-btn add-btn" hover-class="btn-hover" catch:tap="goToCreate">
     <text class="btn-icon">+</text>
     <text class="btn-text">提名朋友</text>
   </view>
@@ -132,7 +132,4 @@
     bind:login="handleUserLogin"
     bind:updateUserInfo="handleUserInfoUpdate"
   />
-
-  <!-- 全局授权弹窗组件 -->
-  <auth-dialog id="authDialog"></auth-dialog>
 </view>

@@ -26,7 +26,7 @@
       <block wx:if="{{recordingState === 'idle'}}">
         <view class="record-idle">
           <button class="btn primary record-btn" bindtap="recordNew">
-            <image class="icon" src="/public/images/mic-icon.png"></image>
+            <image class="icon" src="/images/mic-icon.png"></image>
             录制新的音效
           </button>
         </view>
@@ -46,7 +46,7 @@
         <view class="record-playback">
           <view class="playback-controls">
             <button class="btn playback-btn" bindtap="playTempSound">
-              <image class="icon" src="/public/images/play-icon.png"></image>
+              <image class="icon" src="/images/play-icon.png"></image>
               试听 ({{formattedTempDuration}}s)
             </button>
           </view>

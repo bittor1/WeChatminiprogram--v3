@@ -263,7 +263,7 @@ Page({
     return {
       title: '查看我在伦敦必吃榜的活动',
       path: '/pages/my-votes/my-votes',
-      imageUrl: '/public/placeholder.jpg'
+      imageUrl: '/placeholder.jpg'
     };
   },
   
@@ -272,7 +272,7 @@ Page({
     return {
       title: '查看我在伦敦必吃榜的活动',
       query: '',
-      imageUrl: '/public/placeholder.jpg'
+      imageUrl: '/placeholder.jpg'
     };
   }
 }); 

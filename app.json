@@ -9,7 +9,6 @@
     "pages/my-nominations/my-nominations",
     "pages/my-votes/my-votes",
     "pages/sound-settings/sound-settings",
-    "pages/search/search",
     "pages/report-deed/report-deed",
     "pages/deeds-wall/deeds-wall"
   ],
@@ -21,7 +20,6 @@
     "backgroundColor": "#f8fafc"
   },
   "usingComponents": {
-    "auth-dialog": "/components/auth-dialog/auth-dialog"
   },
   "style": "v2",
   "sitemapLocation": "sitemap.json",

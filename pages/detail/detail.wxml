@@ -24,11 +24,11 @@
   <view class="action-buttons card p-16">
     <button class="action-btn btn btn-accent-green" bindtap="handleVote">
       <text class="btn-icon">👍</text>
-      <text class="btn-text">投票</text>
+      <text class="btn-text">想吃</text>
     </button>
     <button class="action-btn btn btn-secondary" bindtap="handleDownVote">
-      <text class="btn-icon">👎</text>
-      <text class="btn-text">减票</text>
+      <text class="btn-icon">✋</text>
+      <text class="btn-text">拒吃</text>
     </button>
     <button class="action-btn btn btn-secondary" open-type="share">
       <text class="btn-icon">↗</text>
@@ -229,18 +229,13 @@
           <button 
             class="modal-btn btn btn-primary" 
             bindtap="submitAchievement"
-            disabled="{{!newAchievement.trim()}}"
+            disabled="{{!newAchievement}}"
           >
             添加事迹
           </button>
         </view>
       </view>
     </view>
-  </view>
-  
-  <!-- 返回按钮 -->
-  <view class="back-to-home-btn" bindtap="goBackToHome">
-    <text class="back-icon">←</text>
   </view>
   
   <!-- 登录授权弹窗 -->
