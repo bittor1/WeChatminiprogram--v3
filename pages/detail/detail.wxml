@@ -246,4 +246,3 @@
   <!-- 登录授权弹窗 -->
   <auth-dialog id="authDialog"></auth-dialog>
 </view>
-
