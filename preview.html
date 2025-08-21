@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>伦敦必吃榜 - 预览</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+            background-color: #f8fafc;
+            color: #333;
+        }
+        
+        .phone-frame {
+            width: 375px;
+            height: 812px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 40px;
+            box-shadow: 0 0 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .status-bar {
+            height: 44px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            font-size: 14px;
+        }
+        
+        .navbar {
+            height: 44px;
+            background: white;
+            border-bottom: 1px solid #e5e5e5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 500;
+        }
+        
+        .content {
+            height: calc(100% - 88px);
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        .search-bar {
+            background: #f5f5f5;
+            border-radius: 20px;
+            padding: 10px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .search-icon {
+            width: 20px;
+            height: 20px;
+            opacity: 0.5;
+        }
+        
+        .search-input {
+            flex: 1;
+            border: none;
+            background: none;
+            outline: none;
+            font-size: 16px;
+        }
+        
+        .ranking-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .rank-number {
+            width: 30px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #ff6b6b;
+        }
+        
+        .avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin: 0 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .info {
+            flex: 1;
+        }
+        
+        .name {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+        
+        .votes {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .vote-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        .tab-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 50px;
+            background: white;
+            border-top: 1px solid #e5e5e5;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+        
+        .tab-item {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .tab-item.active {
+            color: #ff6b6b;
+        }
+        
+        .floating-btn {
+            position: absolute;
+            bottom: 70px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            background: #ff6b6b;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="phone-frame">
+        <div class="status-bar">
+            <span>9:41</span>
+            <span>100%🔋</span>
+        </div>
+        
+        <div class="navbar">伦敦必吃榜</div>
+        
+        <div class="content">
+            <div class="search-bar">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <input type="text" class="search-input" placeholder="搜索餐厅名称">
+            </div>
+            
+            <div class="ranking-list">
+                <div class="ranking-item">
+                    <div class="rank-number">1</div>
+                    <div class="avatar" style="background: #ff6b6b;">
+                        <span style="color: white; font-size: 20px; font-weight: bold;">鼎</span>
+                    </div>
+                    <div class="info">
+                        <div class="name">鼎泰丰</div>
+                        <div class="votes">128 票</div>
+                    </div>
+                    <button class="vote-btn">投票</button>
+                </div>
+                
+                <div class="ranking-item">
+                    <div class="rank-number">2</div>
+                    <div class="avatar" style="background: #4ecdc4;">
+                        <span style="color: white; font-size: 20px; font-weight: bold;">湘</span>
+                    </div>
+                    <div class="info">
+                        <div class="name">湘满楼</div>
+                        <div class="votes">115 票</div>
+                    </div>
+                    <button class="vote-btn">投票</button>
+                </div>
+                
+                <div class="ranking-item">
+                    <div class="rank-number">3</div>
+                    <div class="avatar" style="background: #45b7d1;">
+                        <span style="color: white; font-size: 20px; font-weight: bold;">和</span>
+                    </div>
+                    <div class="info">
+                        <div class="name">和牛烧肉</div>
+                        <div class="votes">98 票</div>
+                    </div>
+                    <button class="vote-btn">投票</button>
+                </div>
+                
+                <div class="ranking-item">
+                    <div class="rank-number">4</div>
+                    <div class="avatar" style="background: #f7b731;">
+                        <span style="color: white; font-size: 20px; font-weight: bold;">川</span>
+                    </div>
+                    <div class="info">
+                        <div class="name">川味观</div>
+                        <div class="votes">87 票</div>
+                    </div>
+                    <button class="vote-btn">投票</button>
+                </div>
+                
+                <div class="ranking-item">
+                    <div class="rank-number">5</div>
+                    <div class="avatar" style="background: #786fa6;">
+                        <span style="color: white; font-size: 20px; font-weight: bold;">味</span>
+                    </div>
+                    <div class="info">
+                        <div class="name">味千拉面</div>
+                        <div class="votes">76 票</div>
+                    </div>
+                    <button class="vote-btn">投票</button>
+                </div>
+                
+                <div class="ranking-item">
+                    <div class="rank-number">6</div>
+                    <div class="avatar" style="background: #63cdda;">
+                        <span style="color: white; font-size: 20px; font-weight: bold;">粤</span>
+                    </div>
+                    <div class="info">
+                        <div class="name">粤海轩</div>
+                        <div class="votes">65 票</div>
+                    </div>
+                    <button class="vote-btn">投票</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="floating-btn">+</div>
+        
+        <div class="tab-bar">
+            <div class="tab-item active">首页</div>
+            <div class="tab-item">我的提名</div>
+            <div class="tab-item">善行墙</div>
+            <div class="tab-item">我的</div>
+        </div>
+    </div>
+    
+    <script>
+        // 投票交互
+        document.querySelectorAll('.vote-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const votesEl = this.parentElement.querySelector('.votes');
+                const currentVotes = parseInt(votesEl.textContent);
+                votesEl.textContent = (currentVotes + 1) + ' 票';
+                this.textContent = '已投票';
+                this.style.background = '#95e1d3';
+                this.style.cursor = 'not-allowed';
+                this.disabled = true;
+            });
+        });
+        
+        // 添加按钮
+        document.querySelector('.floating-btn').addEventListener('click', function() {
+            alert('点击了添加按钮！在实际小程序中会跳转到提名页面');
+        });
+        
+        // 餐厅项点击
+        document.querySelectorAll('.ranking-item').forEach(item => {
+            item.style.cursor = 'pointer';
+            item.addEventListener('click', function(e) {
+                if (e.target.classList.contains('vote-btn')) return;
+                const name = this.querySelector('.name').textContent;
+                alert(`查看 ${name} 的详情页面`);
+            });
+        });
+        
+        // 搜索功能
+        document.querySelector('.search-input').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            document.querySelectorAll('.ranking-item').forEach(item => {
+                const name = item.querySelector('.name').textContent.toLowerCase();
+                if (name.includes(searchTerm)) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+        
+        // 底部标签栏
+        document.querySelectorAll('.tab-item').forEach(tab => {
+            tab.style.cursor = 'pointer';
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                alert(`切换到 ${this.textContent} 页面`);
+            });
+        });
+    </script>
+</body>
+</html>
