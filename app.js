@@ -170,7 +170,7 @@ App({
         const db = wx.cloud.database();
         db.collection('entries')
           .orderBy('votes', 'desc')
-          .limit(20) // 增加限制数量，确保能看到更多提名
+          .limit(50) // 增加限制数量，确保能看到更多提名
           .get()
           .then(res => {
             console.log('获取排行榜数据成功:', res);
@@ -192,6 +192,9 @@ App({
               
               // 更新全局数据
               this.globalData.rankings = rankings;
+            } else {
+              // 如果没有数据，保持空数组
+              this.globalData.rankings = [];
             }
             
             resolve(this.globalData.rankings);
@@ -203,7 +206,9 @@ App({
               title: '获取数据失败，请重试',
               icon: 'none'
             });
-            reject(err);
+            // 返回空数组而不是拒绝
+            this.globalData.rankings = [];
+            resolve(this.globalData.rankings);
           });
       } else {
         console.error('云开发未初始化');
@@ -211,7 +216,9 @@ App({
           title: '系统初始化失败',
           icon: 'none'
         });
-        reject(new Error('云开发未初始化'));
+        // 返回空数组而不是拒绝
+        this.globalData.rankings = [];
+        resolve(this.globalData.rankings);
       }
     });
   },

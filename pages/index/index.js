@@ -16,10 +16,18 @@ Page({
     shareSupport: {
       canShareTimeline: false,
       canShowShareMenu: false
-    }
+    },
+    isRefreshing: false, // 防止重复刷新
+    hasInitialized: false // 标记是否已初始化
   },
 
   onLoad() {
+    // 检查用户登录状态
+    const userInfo = wx.getStorageSync('userInfo');
+    if (userInfo && userInfo._id) {
+      this.setData({ userInfo });
+    }
+    
     // 首次加载时强制刷新数据，而不是使用可能为空的缓存数据
     this.refreshData();
     
@@ -29,13 +37,11 @@ Page({
   },
   
   onShow() {
-    // 页面显示时检查是否有数据，如果没有则刷新
-    if (!this.data.rankings || this.data.rankings.length === 0) {
-      this.refreshData();
-    } else {
-      // 否则使用常规加载
+    // 如果已经初始化过，使用常规加载
+    if (this.data.hasInitialized) {
       this.loadData();
     }
+    // 否则等待 onLoad 中的初始化完成
   },
 
   // 加载数据
@@ -47,12 +53,7 @@ Page({
     const app = getApp();
     const rankings = app.globalData.rankings || [];
     
-    // 如果rankings为空，则强制刷新数据
-    if (!rankings || rankings.length === 0) {
-      wx.hideLoading();
-      this.refreshData();
-      return;
-    }
+    // 移除自动刷新逻辑，避免死循环
     
     // 计算总投票数
     const totalVotes = this.calculateTotalVotes(rankings);
@@ -105,8 +106,14 @@ Page({
 
   // 刷新数据
   refreshData() {
+    // 防止重复刷新
+    if (this.data.isRefreshing) {
+      console.log('正在刷新中，跳过重复请求');
+      return;
+    }
+    
     const app = getApp();
-    this.setData({ isLoading: true, loadError: false });
+    this.setData({ isLoading: true, loadError: false, isRefreshing: true });
     wx.showLoading({ title: '刷新中...', mask: true });
 
     // 刷新排行榜数据
@@ -125,7 +132,9 @@ Page({
           rankings: validRankings,
           totalVotes: totalVotes, // 明确设置计算出的总投票数
           totalUsers: totalPopular, // 更新为超过百人想吃的人数
-          isLoading: false
+          isLoading: false,
+          isRefreshing: false, // 刷新完成
+          hasInitialized: true // 标记已初始化
         });
 
         // 刷新统计数据
@@ -150,7 +159,9 @@ Page({
           totalVotes: totalVotes, // 明确设置计算出的总投票数
           totalUsers: totalPopular, // 更新为超过百人想吃的人数
           isLoading: false,
-          loadError: true // 显示错误状态
+          loadError: true, // 显示错误状态
+          isRefreshing: false, // 错误时也要重置刷新状态
+          hasInitialized: true // 错误时也标记已初始化
         });
         
         wx.hideLoading();
