@@ -10,7 +10,8 @@
     "pages/my-votes/my-votes",
     "pages/sound-settings/sound-settings",
     "pages/report-deed/report-deed",
-    "pages/deeds-wall/deeds-wall"
+    "pages/deeds-wall/deeds-wall",
+    "pages/search/search"
   ],
   "window": {
     "backgroundTextStyle": "light",
