@@ -29,5 +29,6 @@
   "requiredBackgroundModes": ["audio"],
   "useExtendedLib": {
     "weui": true
-  }
+  },
+  "subPackages": []
 }
