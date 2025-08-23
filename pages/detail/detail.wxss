@@ -531,7 +531,9 @@
   padding: 8rpx 16rpx;
   background-color: #f5f5f5;
   border-radius: 8rpx;
-  margin-bottom: 8rpx;
+  margin: 0 20px;
+  width: calc(100% - 40px);
+  box-sizing: border-box;
 }
 
 .reply-text {
@@ -543,4 +545,13 @@
   font-size: 26rpx;
   color: #1890ff;
   padding: 4rpx 12rpx;
+}
+
+/* 辅助类 */
+.mb-8 {
+  margin-bottom: 8px;
+}
+
+.mb-16 {
+  margin-bottom: 16px;
 }
