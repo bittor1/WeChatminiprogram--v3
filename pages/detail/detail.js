@@ -34,7 +34,12 @@ Page({
       sharedToFriend: false,
       sharedToTimeline: false
     },
-    shareType: '' // 'vote' 或 'downvote'，用于标记分享来源
+    shareType: '', // 'vote' 或 'downvote'，用于标记分享来源
+    replyTo: null, // 回复目标的用户名
+    replyToId: null, // 回复目标的评论ID
+    hasMoreComments: false, // 是否有更多评论
+    commentPage: 1, // 当前评论页码
+    showingMoreReplies: {} // 记录哪些评论展开了更多回复
   },
   
   onLoad(options) {
@@ -895,28 +900,37 @@ Page({
       mask: true
     });
     
+    const requestData = {
+      nominationId: this.data.userInfo.id,
+      content: content
+    };
+    
+    // 如果是回复评论
+    if (this.data.replyToId) {
+      requestData.parentId = this.data.replyToId;
+    }
+    
     wx.cloud.callFunction({
       name: 'commentManage',
       data: {
-        action: 'add',
-        data: {
-          nominationId: this.data.userInfo.id, // 假设userInfo.id是目标ID
-          content: content
-        }
+        action: this.data.replyToId ? 'reply' : 'add',
+        data: requestData
       }
     })
     .then(res => {
       wx.hideLoading();
       
       if (res.result && res.result.success) {
-        // 清空输入框
+        // 清空输入框和回复状态
         this.setData({
-          commentContent: ''
+          commentContent: '',
+          replyTo: null,
+          replyToId: null
         });
         
         // 显示成功提示
         wx.showToast({
-          title: '评论成功',
+          title: this.data.replyToId ? '回复成功' : '评论成功',
           icon: 'success'
         });
         
@@ -937,6 +951,125 @@ Page({
         title: '评论失败',
         icon: 'none'
       });
+    });
+  },
+  
+  // 回复评论
+  replyComment(e) {
+    const { id, name } = e.currentTarget.dataset;
+    this.setData({
+      replyTo: name,
+      replyToId: id
+    });
+    
+    // 聚焦到输入框
+    wx.pageScrollTo({
+      selector: '.comment-input',
+      duration: 300
+    });
+  },
+  
+  // 点赞评论
+  likeComment(e) {
+    const commentId = e.currentTarget.dataset.id;
+    
+    wx.cloud.callFunction({
+      name: 'commentManage',
+      data: {
+        action: 'like',
+        data: {
+          commentId: commentId
+        }
+      }
+    })
+    .then(res => {
+      if (res.result && res.result.success) {
+        // 更新本地评论的点赞数
+        const comments = this.data.comments;
+        const updateLikes = (list) => {
+          for (let comment of list) {
+            if (comment._id === commentId) {
+              comment.likes = (comment.likes || 0) + 1;
+              return true;
+            }
+            if (comment.replies && comment.replies.length > 0) {
+              if (updateLikes(comment.replies)) return true;
+            }
+          }
+          return false;
+        };
+        
+        updateLikes(comments);
+        this.setData({ comments });
+        
+        wx.showToast({
+          title: '点赞成功',
+          icon: 'success',
+          duration: 1000
+        });
+      } else {
+        wx.showToast({
+          title: res.result.message || '点赞失败',
+          icon: 'none'
+        });
+      }
+    })
+    .catch(err => {
+      console.error('点赞失败:', err);
+      wx.showToast({
+        title: '点赞失败',
+        icon: 'none'
+      });
+    });
+  },
+  
+  // 查看更多回复
+  showMoreReplies(e) {
+    const rootId = e.currentTarget.dataset.id;
+    const page = e.currentTarget.dataset.page || 1;
+    
+    wx.showLoading({
+      title: '加载中...'
+    });
+    
+    wx.cloud.callFunction({
+      name: 'commentManage',
+      data: {
+        action: 'listReplies',
+        data: {
+          rootId: rootId,
+          page: page,
+          pageSize: 10
+        }
+      }
+    })
+    .then(res => {
+      wx.hideLoading();
+      
+      if (res.result && res.result.success) {
+        // 更新评论列表中的回复
+        const comments = this.data.comments;
+        for (let comment of comments) {
+          if (comment._id === rootId) {
+            comment.replies = res.result.replies || [];
+            comment.hasMoreReplies = res.result.total > res.result.replies.length;
+            break;
+          }
+        }
+        
+        // 记录已展开的评论
+        const showingMoreReplies = this.data.showingMoreReplies;
+        showingMoreReplies[rootId] = true;
+        
+        this.setData({ 
+          comments,
+          showingMoreReplies
+        });
+      }
+    })
+    .catch(err => {
+      wx.hideLoading();
+      console.error('加载回复失败:', err);
     });
   },
 
@@ -989,23 +1122,30 @@ Page({
   },
 
   // 加载评论列表
-  loadComments(userId) {
+  loadComments(userId, isLoadMore = false) {
+    const page = isLoadMore ? this.data.commentPage + 1 : 1;
+    
     wx.cloud.callFunction({
       name: 'commentManage',
       data: {
         action: 'list',
         data: {
           nominationId: userId,
-          page: 1,
+          page: page,
           pageSize: 20
         }
       }
     })
     .then(res => {
       if (res.result && res.result.success) {
+        const newComments = res.result.comments || [];
+        const comments = isLoadMore ? [...this.data.comments, ...newComments] : newComments;
+        
         this.setData({
-          comments: res.result.comments || [],
-          commentCount: res.result.comments?.length || 0 // 更新评论计数
+          comments: comments,
+          commentCount: res.result.total || 0,
+          commentPage: page,
+          hasMoreComments: comments.length < res.result.total
         });
       } else {
         console.error('加载评论失败:', res.result.message);
@@ -1014,6 +1154,13 @@ Page({
     .catch(err => {
       console.error('加载评论失败:', err);
     });
+  },
+  
+  // 加载更多评论
+  loadMoreComments() {
+    if (this.data.hasMoreComments) {
+      this.loadComments(this.data.userInfo.id, true);
+    }
   },
 
   // 加载用户详情
