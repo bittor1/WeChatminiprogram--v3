@@ -136,6 +136,9 @@ App({
       return;
     }
     
+    // 暂时注释掉数据库初始化检查，避免权限错误
+    // 数据库应该由管理员在云开发控制台手动创建
+    /*
     wx.cloud.callFunction({
       name: 'dbInit',
       data: {
@@ -159,16 +162,26 @@ App({
     }).catch(err => {
       console.error('数据库初始化检查失败:', err);
     });
+    */
+    
+    // 直接加载数据，不进行数据库初始化检查
+    this.refreshRankingData();
   },
   
   // 从云数据库刷新排行榜数据
   refreshRankingData() {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       // 如果云开发已初始化
       if (wx.cloud) {
-        // 查询所有提名，不再过滤votes > 0
+        // 查询所有提名，添加状态过滤避免全表扫描警告
         const db = wx.cloud.database();
+        const _ = db.command;
         db.collection('entries')
+          .where({
+            // 添加一个宽松的条件来避免全表扫描警告
+            // status 为 0 表示正常状态（未删除）
+            status: _.neq(1) // 不等于1（删除状态）
+          })
           .orderBy('votes', 'desc')
           .limit(50) // 增加限制数量，确保能看到更多提名
           .get()
