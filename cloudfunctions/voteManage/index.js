@@ -24,6 +24,10 @@ exports.main = async (event, context) => {
       return await addFreeVote(OPENID, targetId)
     case 'getVoteSummary':
       return await getVoteSummary(targetId)
+    case 'vote': // 添加vote操作
+      return await addFreeVote(OPENID, targetId)
+    case 'downvote': // 添加downvote操作
+      return await removeFreeVote(OPENID, targetId)
     default:
       return {
         success: false,
@@ -102,7 +106,7 @@ async function getUserVotes(openid, userId) {
       const entryInfo = entriesMap[vote.targetId] || {
         id: vote.targetId,
         name: '未知条目',
-        avatar: '/public/placeholder-user.jpg',
+        avatar: '/images/placeholder-user.jpg',
         votes: 0
       }
       
@@ -219,6 +223,90 @@ async function addFreeVote(openid, targetId) {
 }
 
 /**
+ * 减票操作（移除用户的投票）
+ * @param {string} openid 用户的openid
+ * @param {string} targetId 投票目标ID
+ */
+async function removeFreeVote(openid, targetId) {
+  if (!targetId) {
+    return {
+      success: false,
+      message: '缺少目标ID'
+    }
+  }
+  
+  try {
+    // 获取用户信息
+    const userRes = await db.collection('users').where({
+      openid: openid
+    }).get()
+    
+    if (!userRes.data || userRes.data.length === 0) {
+      return {
+        success: false,
+        message: '用户不存在'
+      }
+    }
+    
+    const userId = userRes.data[0]._id
+    
+    // 检查用户是否对该条目投过票
+    const voteRes = await votesCollection
+      .where({
+        userId: userId,
+        targetId: targetId
+      })
+      .get()
+    
+    if (!voteRes.data || voteRes.data.length === 0) {
+      return {
+        success: false,
+        message: '您还未对此条目投票，无法减票'
+      }
+    }
+    
+    // 删除投票记录
+    await votesCollection.where({
+      userId: userId,
+      targetId: targetId
+    }).remove()
+    
+    // 更新条目的票数
+    const entryRes = await entriesCollection.doc(targetId).get()
+    if (!entryRes.data) {
+      return {
+        success: false,
+        message: '条目不存在'
+      }
+    }
+    
+    // 直接减1，允许票数为负数
+    const currentVotes = entryRes.data.votes || 0
+    const newVotes = currentVotes - 1
+    
+    await entriesCollection.doc(targetId).update({
+      data: {
+        votes: newVotes,
+        trend: 'down'
+      }
+    })
+    
+    return {
+      success: true,
+      message: '减票成功',
+      newVotes: newVotes
+    }
+  } catch (err) {
+    console.error('减票失败:', err)
+    return {
+      success: false,
+      message: '减票失败',
+      error: err.message
+    }
+  }
+}
+
+/**
  * 获取投票汇总信息
  * @param {string} targetId 目标条目ID
  */
@@ -306,7 +394,7 @@ async function createVoteNotification(nominationId, voterId) {
     const nominationData = nomination.data;
     const voterData = voter.data.length > 0 ? voter.data[0] : {
       name: '用户',
-      avatar: '/public/placeholder-user.jpg'
+      avatar: '/images/placeholder-user.jpg'
     };
     
     // 如果投票者不是提名者，则发送通知
@@ -319,7 +407,7 @@ async function createVoteNotification(nominationId, voterId) {
             receiverId: nominationData.creatorId,
             senderId: voterId,
             senderName: voterData.name || '用户',
-            senderAvatar: voterData.avatar || '/public/placeholder-user.jpg',
+            senderAvatar: voterData.avatar || '/images/placeholder-user.jpg',
             type: 'vote',
             content: `${voterData.name || '用户'} 给你的提名投了一票`,
             nominationId: nominationId,

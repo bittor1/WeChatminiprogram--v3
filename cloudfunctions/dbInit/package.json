@@ -1,7 +1,7 @@
 {
   "name": "dbInit",
   "version": "1.0.0",
-  "description": "初始化数据库集合",
+  "description": "初始化数据库集合和索引",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

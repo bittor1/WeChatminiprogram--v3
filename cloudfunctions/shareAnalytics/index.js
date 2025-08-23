@@ -397,7 +397,7 @@ async function getPopularShares(limit = 10) {
     const result = popularNominations.list.map(item => {
       const nomination = nominationsMap[item._id] || {
         name: '未知提名',
-        avatarUrl: '/public/placeholder.jpg',
+        avatarUrl: '/placeholder.jpg',
         votes: 0
       }
       

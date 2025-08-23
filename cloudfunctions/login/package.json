@@ -1,0 +1,30 @@
+<<<<<<< Updated upstream:cloudfunctions/login/package.json
+{
+  "name": "login",
+  "version": "1.0.0",
+  "description": "处理小程序扫码登录",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+=======
+{
+  "name": "search",
+  "version": "1.0.0",
+  "description": "搜索功能云函数",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+>>>>>>> Stashed changes:cloudfunctions/search/package.json
+} 

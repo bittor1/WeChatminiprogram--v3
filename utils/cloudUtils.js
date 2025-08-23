@@ -94,7 +94,7 @@ const fallbackVideoToGif = (fileID, options = {}) => {
     
     // 截帧作为静态图片（如果可能）
     // 由于微信小程序环境限制，这里我们使用占位图
-    const placeholderImage = '/public/placeholder-user.jpg';
+    const placeholderImage = '/images/placeholder-user.jpg';
     
     // 上传占位图到云存储
     wx.getFileSystemManager().readFile({
@@ -117,7 +117,7 @@ const fallbackVideoToGif = (fileID, options = {}) => {
       fail: err => {
         console.error('读取占位图失败:', err);
         // 最后的备用方案：返回一个已知的云存储图片ID
-        resolve('/public/placeholder-user.jpg');
+        resolve('/images/placeholder-user.jpg');
       }
     });
   });

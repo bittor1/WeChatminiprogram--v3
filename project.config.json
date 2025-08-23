@@ -75,10 +75,6 @@
         "type": "folder"
       },
       {
-        "value": "pages/search",
-        "type": "folder"
-      },
-      {
         "value": "components/theme-provider.tsx",
         "type": "file"
       },
@@ -97,25 +93,8 @@
       {
         "value": "tsconfig.json",
         "type": "file"
-      },
-      {
-        "value": "components.json",
-        "type": "file"
-      },
-      {
-        "value": "package.json",
-        "type": "file"
-      },
-      {
-        "value": "package-lock.json",
-        "type": "file"
-      },
-      {
-        "value": "pnpm-lock.yaml",
-        "type": "file"
       }
-    ],
-    "include": []
+    ]
   },
   "editorSetting": {
     "tabIndent": "insertSpaces",

@@ -61,7 +61,7 @@ Page({
     return {
       title: '看看我提名的伦敦必吃榜人物',
       path: '/pages/my-nominations/my-nominations',
-      imageUrl: '/public/placeholder.jpg'
+      imageUrl: '/placeholder.jpg'
     };
   },
   
@@ -70,7 +70,7 @@ Page({
     return {
       title: '看看我提名的伦敦必吃榜人物',
       query: '',
-      imageUrl: '/public/placeholder.jpg'
+      imageUrl: '/placeholder.jpg'
     };
   }
 }); 

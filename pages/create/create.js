@@ -476,7 +476,7 @@ Page({
     return {
       title: title,
       path: path,
-      imageUrl: '/public/placeholder.jpg' // 使用项目中的默认图片
+      imageUrl: '/placeholder.jpg' // 使用项目中的默认图片
     };
   },
   
@@ -488,7 +488,7 @@ Page({
     return {
       title: title,
       query: '',
-      imageUrl: '/public/placeholder.jpg' // 使用项目中的默认图片
+      imageUrl: '/placeholder.jpg' // 使用项目中的默认图片
     };
   },
 

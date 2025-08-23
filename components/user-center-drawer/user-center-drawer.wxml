@@ -11,7 +11,7 @@
       <!-- 已登录状态 -->
       <block wx:if="{{userInfo}}">
         <view class="user-avatar-container">
-          <image class="user-avatar" src="{{userInfo.avatarUrl || '/public/placeholder-user.jpg'}}" mode="aspectFill"></image>
+          <image class="user-avatar" src="{{userInfo.avatarUrl || '/images/placeholder-user.jpg'}}" mode="aspectFill"></image>
         </view>
         <view class="user-details">
           <text class="user-name">{{userInfo.name || '授权用户'}}</text>
@@ -21,11 +21,12 @@
       
       <!-- 未登录状态 -->
       <block wx:else>
-        <view class="user-avatar-container">
-          <image class="user-avatar" src="/public/placeholder-user.jpg" mode="aspectFill"></image>
+        <view class="user-avatar-container" catchtap="openScanLogin">
+          <image class="user-avatar" src="/images/placeholder-user.jpg" mode="aspectFill"></image>
         </view>
-        <view class="user-details">
-          <text class="user-name">未登录用户</text>
+        <view class="user-details" catchtap="openScanLogin">
+          <text class="user-name">点击扫码登录</text>
+          <text class="user-status">登录后体验更多功能</text>
         </view>
       </block>
     </view>
@@ -85,7 +86,7 @@
   </view>
   
   <!-- 退出登录 -->
-  <view class="logout-section">
+  <view class="logout-section" wx:if="{{userInfo}}">
     <button class="logout-btn" catchtap="logout">退出登录</button>
   </view>
 </view>

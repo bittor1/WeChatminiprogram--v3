@@ -319,6 +319,13 @@
   padding: 0 16px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   z-index: 100;
+  transition: all 0.2s ease;
+}
+
+/* 按钮悬停效果 */
+.btn-hover {
+  transform: scale(0.95);
+  opacity: 0.9;
 }
 
 /* 关于作者按钮 (左下角) */

@@ -23,6 +23,12 @@ App({
     
     // 检查分享功能支持
     this.checkShareSupport();
+    
+    // 检查图片资源是否存在
+    this.checkImageResources();
+    
+    // 预加载图片
+    this.preloadImages();
   },
   
   // 检查分享功能支持
@@ -327,6 +333,35 @@ App({
   },
   
   // createPayment 函数已移除
+  
+  // 修改checkImageResources方法，使用wx.getImageInfo替代文件系统API
+  checkImageResources: function() {
+    console.log('检查图片资源...');
+    
+    // 不使用文件系统API，直接使用预加载函数
+    this.preloadImages();
+  },
+  
+  // 添加预加载图片的方法
+  preloadImages: function() {
+    const imagesToPreload = [
+      '/images/placeholder-user.jpg',
+      '/images/placeholder.jpg',
+      '/images/avatar_default.png'
+    ];
+    
+    imagesToPreload.forEach(imagePath => {
+      wx.getImageInfo({
+        src: imagePath,
+        success: res => {
+          console.log(`预加载图片成功: ${imagePath}`, res);
+        },
+        fail: err => {
+          console.error(`预加载图片失败: ${imagePath}`, err);
+        }
+      });
+    });
+  },
   
   // 全局变量
   globalData: {
