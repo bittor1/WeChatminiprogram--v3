@@ -22,6 +22,8 @@ Page({
     innerAudioContext: null, // 音频播放器
     achievements: [], // 空数组，等待从服务器加载或用户添加
     comments: [], // 空数组，等待从服务器加载或用户添加
+    replyTo: null, // 回复对象的名称
+    replyToId: null, // 回复对象的评论ID
     voteLimit: {
       hasVoted: false,
       lastVoteDate: null
@@ -957,6 +959,17 @@ Page({
   // 回复评论
   replyComment(e) {
     const { id, name } = e.currentTarget.dataset;
+    
+    // 添加参数检查
+    if (!id || !name) {
+      console.error('回复评论参数缺失:', { id, name, dataset: e.currentTarget.dataset });
+      wx.showToast({
+        title: '无法回复该评论',
+        icon: 'none'
+      });
+      return;
+    }
+    
     this.setData({
       replyTo: name,
       replyToId: id
@@ -966,6 +979,14 @@ Page({
     wx.pageScrollTo({
       selector: '.comment-input',
       duration: 300
+    });
+  },
+  
+  // 取消回复
+  cancelReply() {
+    this.setData({
+      replyTo: null,
+      replyToId: null
     });
   },
   

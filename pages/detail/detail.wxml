@@ -103,6 +103,10 @@
     
     <!-- 评论输入框 -->
     <view class="comment-input-container mb-16">
+      <view wx:if="{{replyTo}}" class="reply-indicator">
+        <text class="reply-text">回复 {{replyTo}}</text>
+        <text class="cancel-reply" bindtap="cancelReply">取消</text>
+      </view>
       <input 
         class="comment-input input" 
         placeholder="{{replyTo ? '回复 '+replyTo+'...' : '添加评论...'}}" 
