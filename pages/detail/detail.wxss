@@ -352,3 +352,173 @@
   margin-left: auto;
   margin-right: auto;
 }
+
+/* 评论列表样式 */
+.comments-list {
+  padding: 0 16rpx;
+}
+
+.comment-item {
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.comment-item:last-child {
+  border-bottom: none;
+}
+
+.comment-user {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.comment-avatar {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 50%;
+  margin-right: 16rpx;
+}
+
+.comment-user-info {
+  flex: 1;
+}
+
+.comment-username {
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #333;
+  margin-right: 16rpx;
+}
+
+.comment-time {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.comment-content {
+  font-size: 28rpx;
+  color: #333;
+  line-height: 1.6;
+  margin-bottom: 16rpx;
+  padding-left: 76rpx;
+}
+
+.comment-actions {
+  display: flex;
+  align-items: center;
+  padding-left: 76rpx;
+  gap: 32rpx;
+}
+
+.action-item {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  color: #666;
+  font-size: 24rpx;
+}
+
+.action-icon {
+  font-size: 24rpx;
+}
+
+.action-text {
+  font-size: 24rpx;
+}
+
+/* 回复样式 */
+.replies-container {
+  margin-left: 76rpx;
+  margin-top: 16rpx;
+  background-color: #f9f9f9;
+  border-radius: 8rpx;
+  padding: 16rpx;
+}
+
+.reply-item {
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #eee;
+}
+
+.reply-item:last-child {
+  border-bottom: none;
+}
+
+.reply-user {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+
+.reply-avatar {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  margin-right: 12rpx;
+}
+
+.reply-user-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.reply-username {
+  font-size: 26rpx;
+  font-weight: 500;
+  color: #333;
+}
+
+.reply-to {
+  font-size: 26rpx;
+  color: #666;
+  margin: 0 8rpx;
+}
+
+.reply-time {
+  font-size: 22rpx;
+  color: #999;
+  margin-left: 16rpx;
+}
+
+.reply-content {
+  font-size: 26rpx;
+  color: #333;
+  line-height: 1.5;
+  margin-bottom: 12rpx;
+  padding-left: 60rpx;
+}
+
+.reply-actions {
+  display: flex;
+  align-items: center;
+  padding-left: 60rpx;
+  gap: 24rpx;
+}
+
+/* 查看更多回复 */
+.view-more-replies {
+  text-align: center;
+  color: #8B5CF6;
+  font-size: 26rpx;
+  padding: 16rpx 0;
+  margin-top: 8rpx;
+}
+
+/* 加载更多评论 */
+.load-more {
+  text-align: center;
+  color: #666;
+  font-size: 28rpx;
+  padding: 32rpx 0;
+}
+
+/* 空评论提示 */
+.empty-comments {
+  text-align: center;
+  color: #999;
+  font-size: 28rpx;
+  padding: 60rpx 0;
+}
