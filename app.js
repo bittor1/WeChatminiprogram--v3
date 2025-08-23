@@ -173,14 +173,14 @@ App({
     return new Promise((resolve) => {
       // 如果云开发已初始化
       if (wx.cloud) {
-        // 查询所有提名，添加状态过滤避免全表扫描警告
+        // 查询所有提名
         const db = wx.cloud.database();
         const _ = db.command;
         db.collection('entries')
           .where({
-            // 添加一个宽松的条件来避免全表扫描警告
-            // status 为 0 表示正常状态（未删除）
-            status: _.neq(1) // 不等于1（删除状态）
+            // 使用一个始终为真的条件来避免全表扫描警告
+            // votes 字段大于等于 0（包括所有条目）
+            votes: _.gte(0)
           })
           .orderBy('votes', 'desc')
           .limit(50) // 增加限制数量，确保能看到更多提名
