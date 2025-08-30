@@ -19,12 +19,12 @@ exports.main = async (event, context) => {
         return await listComments(data);
       case 'listReplies':
         return await listReplies(data);
-      case 'delete':
-        return await deleteComment(data, userId);
       case 'like':
         return await likeComment(data, userId);
-      default:
-        return { success: false, message: '未知操作' };
+      case 'delete':
+        return await deleteComment(data, userId);
+    default:
+      return { success: false, message: '未知操作' };
     }
   } catch (error) {
     console.error(`评论管理云函数错误: ${error.message}`, error);
@@ -34,8 +34,12 @@ exports.main = async (event, context) => {
 
 // 添加评论
 async function addComment(data, userId) {
+  console.log('添加评论 - 接收数据:', data);
+  console.log('添加评论 - 用户ID:', userId);
+  
   // 参数验证
   if (!data.nominationId || !data.content) {
+    console.error('添加评论 - 参数不完整:', { nominationId: data.nominationId, content: data.content });
     return { success: false, message: '参数不完整' };
   }
   
@@ -71,6 +75,7 @@ async function addComment(data, userId) {
     creatorId: userId,
     creatorName: userInfo.name || '用户',
     creatorAvatar: userInfo.avatar || '/images/placeholder-user.jpg',
+    _openid: userId, // 添加openid字段用于权限验证
     parentId: null,
     rootId: null,
     replyTo: { userId: null, userName: null },
@@ -87,7 +92,7 @@ async function addComment(data, userId) {
     });
     
     // 更新提名评论数
-    await db.collection('nominations').doc(data.nominationId).update({
+    await db.collection('entries').doc(data.nominationId).update({
       data: {
         commentCount: _.inc(1),
         updateTime: db.serverDate()
@@ -106,8 +111,12 @@ async function addComment(data, userId) {
 
 // 回复评论
 async function replyComment(data, userId) {
+  console.log('回复评论 - 接收数据:', data);
+  console.log('回复评论 - 用户ID:', userId);
+  
   // 参数验证
   if (!data.nominationId || !data.content || !data.parentId) {
+    console.error('回复评论 - 参数不完整:', { nominationId: data.nominationId, content: data.content, parentId: data.parentId });
     return { success: false, message: '参数不完整' };
   }
   
@@ -133,6 +142,7 @@ async function replyComment(data, userId) {
       creatorId: userId,
       creatorName: userInfo.name || '用户',
       creatorAvatar: userInfo.avatar || '/images/placeholder-user.jpg',
+      _openid: userId, // 添加openid字段用于权限验证
       parentId: data.parentId,
       rootId: rootId,
       replyTo: {
@@ -151,7 +161,7 @@ async function replyComment(data, userId) {
     });
     
     // 更新提名评论数
-    await db.collection('nominations').doc(data.nominationId).update({
+    await db.collection('entries').doc(data.nominationId).update({
       data: {
         commentCount: _.inc(1),
         updateTime: db.serverDate()
@@ -289,40 +299,81 @@ async function listReplies(data) {
 
 // 删除评论
 async function deleteComment(data, userId) {
+  console.log('删除评论 - 接收数据:', data);
+  console.log('删除评论 - 用户ID:', userId);
+  
   // 参数验证
   if (!data.commentId) {
+    console.error('删除评论 - 参数不完整:', { commentId: data.commentId });
     return { success: false, message: '参数不完整' };
   }
-  
+
   try {
-    // 获取评论信息
-    const commentResult = await db.collection('comments').doc(data.commentId).get();
+    // 获取评论信息，验证是否是用户自己的评论
+    const commentResult = await db.collection('comments')
+      .doc(data.commentId)
+      .get();
+
+    if (!commentResult.data) {
+      return { success: false, message: '评论不存在' };
+    }
+
     const comment = commentResult.data;
     
-    // 检查权限（只有评论创建者可以删除）
-    if (comment.creatorId !== userId) {
-      return { success: false, message: '没有权限删除此评论' };
+    // 验证是否是评论作者
+    if (comment._openid !== userId) {
+      return { success: false, message: '只能删除自己的评论' };
     }
-    
-    // 软删除评论
-    await db.collection('comments').doc(data.commentId).update({
-      data: {
-        status: 1,  // 1-删除
-        updateTime: db.serverDate()
-      }
-    });
-    
-    // 如果是顶级评论，更新提名评论数
+
+    // 删除评论
+    await db.collection('comments')
+      .doc(data.commentId)
+      .remove();
+
+    // 如果是主评论，还需要删除所有子评论
     if (!comment.parentId) {
-      await db.collection('nominations').doc(comment.nominationId).update({
-        data: {
-          commentCount: _.inc(-1),
-          updateTime: db.serverDate()
-        }
-      });
+      // 删除所有子评论
+      await db.collection('comments')
+        .where({
+          parentId: data.commentId
+        })
+        .remove();
+      
+      // 更新提名评论数（减少1个主评论）
+      try {
+        await db.collection('entries').doc(comment.nominationId).update({
+          data: {
+            commentCount: _.inc(-1),
+            updateTime: db.serverDate()
+          }
+        });
+        console.log('更新提名评论数成功');
+      } catch (updateError) {
+        console.error('更新提名评论数失败:', updateError);
+        // 更新失败不影响删除操作，继续执行
+      }
     }
-    
-    return { success: true };
+
+    // 删除相关的点赞记录
+    try {
+      await db.collection('comment_likes')
+        .where({
+          commentId: data.commentId
+        })
+        .remove();
+      console.log('删除点赞记录成功');
+    } catch (likeError) {
+      console.error('删除点赞记录失败:', likeError);
+      // 删除点赞记录失败不影响删除操作，继续执行
+    }
+
+    console.log('删除评论成功:', data.commentId);
+    return { 
+      success: true, 
+      message: '删除成功',
+      data: { commentId: data.commentId }
+    };
+
   } catch (error) {
     console.error('删除评论失败:', error);
     return { success: false, message: '删除评论失败', error: error.message };
@@ -378,7 +429,7 @@ async function createCommentNotification(nominationId, commenterId) {
   try {
     // 获取提名信息和评论者信息
     const [nominationResult, commenterResult] = await Promise.all([
-      db.collection('nominations').doc(nominationId).get(),
+      db.collection('entries').doc(nominationId).get(),
       db.collection('users').where({ _openid: commenterId }).get()
     ]);
     
@@ -418,7 +469,7 @@ async function createReplyNotification(nominationId, replyerId, receiverId, comm
   try {
     // 获取提名信息和回复者信息
     const [nominationResult, replierResult] = await Promise.all([
-      db.collection('nominations').doc(nominationId).get(),
+      db.collection('entries').doc(nominationId).get(),
       db.collection('users').where({ _openid: replyerId }).get()
     ]);
     

@@ -2,11 +2,11 @@
   <!-- 个人信息卡片 -->
   <view class="profile-card card p-16">
     <view class="profile-avatar-container">
-      <image class="profile-avatar" src="{{userInfo.avatar}}" mode="aspectFill" lazy-load="true"></image>
-      <view class="rank-tag">#{{userInfo.rank}}</view>
+      <image class="profile-avatar" src="{{entryDetail.avatar}}" mode="aspectFill" lazy-load="true"></image>
+      <view class="rank-tag">#{{entryDetail.rank}}</view>
     </view>
     
-    <text class="profile-name h2">{{userInfo.name}}</text>
+    <text class="profile-name h2">{{entryDetail.name}}</text>
     <text class="profile-title text-body">伦敦得吃王者</text>
     
     <view class="badge-row flex justify-center gap-12 my-16">
@@ -39,14 +39,67 @@
   <!-- 音效功能区 -->
   <view class="sound-section card p-16">
     <view class="custom-flex-row">
-      <button class="sound-btn btn btn-accent-purple custom-flex-large" bindtap="playSound">
-        <text class="btn-icon">🎤</text>
-        <text class="btn-text">录制投票音效</text>
-      </button>
-      <button class="record-btn btn btn-secondary custom-flex-small" bindtap="recordSound">
-        <text class="btn-icon">✓</text>
-        <text class="btn-text">确认音效</text>
-      </button>
+      <!-- 录制投票音效按钮 / 录音进度条 / 预览音效按钮 -->
+      <view class="custom-flex-large">
+        <!-- 初始状态：录制投票音效按钮 -->
+        <button wx:if="{{recordingState === 'idle'}}" 
+                class="sound-btn btn btn-accent-purple" 
+                bindtap="playSound">
+          <text class="btn-icon">🎤</text>
+          <text class="btn-text">录制投票音效</text>
+        </button>
+        
+        <!-- 录制中状态：录音进度条 -->
+        <view wx:if="{{recordingState === 'recording'}}" class="recording-progress">
+          <view class="progress-container">
+            <view class="progress-bar">
+              <view class="progress-fill" style="width: {{(recordTime/5)*100}}%"></view>
+            </view>
+            <text class="progress-time">{{formattedRecordTime}} / 00:05</text>
+          </view>
+          <view class="recording-indicator">
+            <text class="recording-dot">●</text>
+            <text class="recording-text">录音中...</text>
+          </view>
+        </view>
+        
+        <!-- 录制完成状态：预览音效按钮 -->
+        <view wx:if="{{recordingState === 'recorded'}}" class="preview-sound-container">
+          <button class="preview-sound-btn btn btn-accent-blue" bindtap="previewRecordedSound">
+            <text class="btn-icon">🔊</text>
+            <text class="btn-text">预览音效 ({{formattedTempDuration}}s)</text>
+          </button>
+          <button class="delete-sound-btn" bindtap="deleteRecordedSound">
+            <text class="delete-icon">×</text>
+          </button>
+        </view>
+      </view>
+      
+      <!-- 确认音效按钮 / 确认+取消按钮 -->
+      <view class="custom-flex-small">
+        <!-- 初始状态和录制完成状态：确认音效按钮 -->
+        <button wx:if="{{recordingState === 'idle' || recordingState === 'recorded'}}" 
+                class="record-btn btn btn-secondary" 
+                bindtap="recordSound">
+          <text class="btn-icon">✓</text>
+          <text class="btn-text">确认音效</text>
+        </button>
+        
+        <!-- 录制中状态：确认+取消按钮 -->
+        <view wx:if="{{recordingState === 'recording'}}" class="recording-actions">
+          <button class="confirm-record-btn btn btn-accent-green" bindtap="confirmRecording">
+            <text class="btn-text">确认</text>
+          </button>
+          <button class="cancel-record-btn btn btn-secondary" bindtap="cancelRecording">
+            <text class="btn-text">取消</text>
+          </button>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 当前页面音效提示 -->
+    <view wx:if="{{currentPageSound}}" class="current-sound-tip">
+      <text class="tip-text">当前音效：{{currentPageSound.name || '投票音效'}}</text>
     </view>
   </view>
 
@@ -102,17 +155,23 @@
     </view>
     
     <!-- 评论输入框 -->
-    <view wx:if="{{replyTo}}" class="reply-indicator mb-8">
-      <text class="reply-text">回复 {{replyTo}}</text>
-      <text class="cancel-reply" bindtap="cancelReply">取消</text>
-    </view>
     <view class="comment-input-container mb-16">
-      <input 
-        class="comment-input input" 
-        placeholder="{{replyTo ? '回复 '+replyTo+'...' : '添加评论...'}}" 
-        value="{{commentContent}}"
-        bindinput="onCommentInput" 
-      />
+      <view class="comment-input-wrapper">
+        <input 
+          class="comment-input input" 
+          placeholder="{{replyTo ? '回复 ' + replyTo : '添加评论...'}}"
+          value="{{commentContent}}"
+          bindinput="onCommentInput"
+          adjust-position="{{false}}"
+          hold-keyboard="{{true}}"
+          confirm-type="send"
+          bindconfirm="submitComment"
+        />
+        <!-- 取消回复按钮 -->
+        <view wx:if="{{replyTo}}" class="cancel-reply-btn" bindtap="cancelReply">
+          <text>×</text>
+        </view>
+      </view>
       <button class="comment-submit-btn btn btn-accent-purple" bindtap="submitComment">
         <text class="btn-text">发送</text>
       </button>
@@ -123,22 +182,25 @@
       <block wx:if="{{comments.length > 0}}">
         <!-- 顶级评论 -->
         <view class="comment-item" wx:for="{{comments}}" wx:key="_id">
-          <view class="comment-user">
+          <view class="comment-main">
             <image class="comment-avatar" src="{{item.creatorAvatar}}" mode="aspectFill"></image>
-            <view class="comment-user-info">
-              <text class="comment-username">{{item.creatorName}}</text>
+            <view class="comment-body">
+              <view class="comment-header">
+                <text class="comment-username">{{item.creatorName}}</text>
+              </view>
+              <text class="comment-content">{{item.content}}</text>
               <text class="comment-time">{{formatTime(item.createTime)}}</text>
-            </view>
-          </view>
-          <view class="comment-content">{{item.content}}</view>
-          <view class="comment-actions">
-            <view class="action-item" bindtap="replyComment" data-id="{{item._id}}" data-name="{{item.creatorName}}">
-              <text class="action-icon">💬</text>
-              <text class="action-text">回复</text>
-            </view>
-            <view class="action-item" bindtap="likeComment" data-id="{{item._id}}">
-              <text class="action-icon">👍</text>
-              <text class="action-text">{{item.likes || 0}}</text>
+              <view class="comment-actions">
+                <text class="action-item" bindtap="replyComment" data-id="{{item._id}}" data-name="{{item.creatorName}}">
+                  <text class="action-text">回复</text>
+                </text>
+                <text class="action-item" bindtap="likeComment" data-id="{{item._id}}">
+                  <text class="action-text">赞{{item.likes > 0 ? ' ' + item.likes : ''}}</text>
+                </text>
+                <text wx:if="{{item._openid && currentUser.openid && item._openid === currentUser.openid}}" class="action-item delete-action" bindtap="deleteComment" data-id="{{item._id}}" data-type="comment">
+                  <text class="action-text">删除</text>
+                </text>
+              </view>
             </view>
           </view>
           
@@ -146,23 +208,20 @@
           <view class="replies-container" wx:if="{{item.replies && item.replies.length > 0}}">
             <block wx:for="{{item.replies}}" wx:for-item="reply" wx:key="_id">
               <view class="reply-item">
-                <view class="reply-user">
+                <view class="reply-main">
                   <image class="reply-avatar" src="{{reply.creatorAvatar}}" mode="aspectFill"></image>
-                  <view class="reply-user-info">
-                    <text class="reply-username">{{reply.creatorName}}</text>
-                    <text class="reply-to" wx:if="{{reply.replyTo && reply.replyTo.userName}}"> 回复 {{reply.replyTo.userName}}</text>
+                  <view class="reply-body">
+                    <view class="reply-header">
+                      <text class="reply-username">{{reply.creatorName}}</text>
+                      <text class="reply-to" wx:if="{{reply.replyTo && reply.replyTo.userName}}">回复{{reply.replyTo.userName}}:</text>
+                    </view>
+                    <text class="reply-content">{{reply.content}}</text>
                     <text class="reply-time">{{formatTime(reply.createTime)}}</text>
-                  </view>
-                </view>
-                <view class="reply-content">{{reply.content}}</view>
-                <view class="reply-actions">
-                  <view class="action-item" bindtap="replyComment" data-id="{{reply._id}}" data-name="{{reply.creatorName}}">
-                    <text class="action-icon">💬</text>
-                    <text class="action-text">回复</text>
-                  </view>
-                  <view class="action-item" bindtap="likeComment" data-id="{{reply._id}}">
-                    <text class="action-icon">👍</text>
-                    <text class="action-text">{{reply.likes || 0}}</text>
+                    <view class="reply-actions">
+                      <text class="reply-action-item" bindtap="replyComment" data-id="{{reply._id}}" data-name="{{reply.creatorName}}">回复</text>
+                      <text class="reply-action-item" bindtap="likeComment" data-id="{{reply._id}}">赞{{reply.likes > 0 ? ' ' + reply.likes : ''}}</text>
+                      <text wx:if="{{reply._openid && currentUser.openid && reply._openid === currentUser.openid}}" class="reply-action-item delete-action" bindtap="deleteComment" data-id="{{reply._id}}" data-type="reply">删除</text>
+                    </view>
                   </view>
                 </view>
               </view>

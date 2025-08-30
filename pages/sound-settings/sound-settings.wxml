@@ -58,6 +58,52 @@
       </block>
     </view>
     
+    <!-- 用户音效库 -->
+    <view class="user-sounds-section">
+      <view class="section-header" bindtap="toggleUserSounds">
+        <text class="section-title">我的音效库 ({{userSounds.length}})</text>
+        <text class="toggle-icon">{{showUserSounds ? '▼' : '▶'}}</text>
+      </view>
+      
+      <view wx:if="{{showUserSounds}}" class="user-sounds-list">
+        <block wx:if="{{userSounds.length > 0}}">
+          <view class="user-sound-item" wx:for="{{userSounds}}" wx:key="_id">
+            <view class="sound-info">
+              <text class="sound-name">{{item.name || '投票音效'}}</text>
+              <text class="sound-duration">{{item.formattedDuration}}s</text>
+              <text class="sound-date">{{item.formattedCreateTime}}</text>
+            </view>
+            <view class="sound-actions">
+              <button class="action-btn preview-btn" 
+                      bindtap="previewUserSound" 
+                      data-sound-id="{{item._id}}" 
+                      data-file-id="{{item.fileId}}">
+                <image class="action-icon" src="/images/play-icon.png"></image>
+                预览
+              </button>
+              <button class="action-btn apply-btn" 
+                      bindtap="applyUserSound" 
+                      data-sound-id="{{item._id}}" 
+                      data-file-id="{{item.fileId}}" 
+                      data-name="{{item.name}}">
+                确认音效
+              </button>
+              <button class="action-btn delete-btn" 
+                      bindtap="deleteUserSound" 
+                      data-sound-id="{{item._id}}" 
+                      data-name="{{item.name}}">
+                删除
+              </button>
+            </view>
+          </view>
+        </block>
+        
+        <view wx:else class="empty-sounds">
+          <text class="empty-text">暂无音效，录制一个试试吧！</text>
+        </view>
+      </view>
+    </view>
+    
     <view class="tip">提示：录制完成后，您可以试听并决定是否保存。</view>
   </view>
 </view> 

@@ -22,10 +22,14 @@ Page({
   },
 
   onLoad() {
-    // 检查用户登录状态
-    const userInfo = wx.getStorageSync('userInfo');
-    if (userInfo && userInfo._id) {
-      this.setData({ userInfo });
+    // 获取应用实例
+    const app = getApp();
+    
+    // 检查用户登录状态（基于无感登录的token）
+    if (app.globalData.isLoggedIn && app.globalData.userInfo) {
+      this.setData({ 
+        userInfo: app.globalData.userInfo 
+      });
     }
     
     // 首次加载时强制刷新数据，而不是使用可能为空的缓存数据

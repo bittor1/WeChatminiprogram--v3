@@ -160,66 +160,70 @@ const saveNominationToDb = (data) => {
 };
 
 /**
- * 获取系统信息 - 使用兼容方式替代弃用的wx.getSystemInfoSync
- * @returns {Object} 系统信息对象
+ * 获取系统信息 - 使用新API替代已废弃的wx.getSystemInfoSync
+ * @returns {Promise<Object>} 系统信息对象
  */
 const getSystemInfo = () => {
-  try {
-    // 判断新API是否可用
-    if (typeof wx.getSystemSetting === 'function' &&
-        typeof wx.getAppAuthorizeSetting === 'function' &&
-        typeof wx.getDeviceInfo === 'function' &&
-        typeof wx.getWindowInfo === 'function' &&
-        typeof wx.getAppBaseInfo === 'function') {
-      
-      // 使用新API
-      const systemSetting = wx.getSystemSetting();
-      const appAuthorizeSetting = wx.getAppAuthorizeSetting();
-      const deviceInfo = wx.getDeviceInfo();
-      const windowInfo = wx.getWindowInfo();
-      const appBaseInfo = wx.getAppBaseInfo();
-      
-      // 合并所有信息到一个对象
-      return {
-        ...systemSetting,
-        ...appAuthorizeSetting,
-        ...deviceInfo,
-        ...windowInfo,
-        ...appBaseInfo
-      };
-    } else {
-      // 回退到旧API，但使用try-catch调用原来的方法
-      // 通过实际调用获取真实数据而不是使用我们自己的monkey patch
-      const originalGetSystemInfoSync = wx.getSystemInfoSync;
-      // 临时移除我们的monkey patch以获取原始信息
-      wx.getSystemInfoSync = undefined;
-      let result;
-      try {
-        // 尝试使用临时恢复的原始方法
-        result = originalGetSystemInfoSync();
-      } catch (err) {
-        console.error('获取系统信息失败:', err);
-        // 使用wx.getSystemInfo作为备选方案
-        result = {};
+  return new Promise((resolve, reject) => {
+    try {
+      // 判断新API是否可用 (基础库 2.20.1 及以上版本支持)
+      if (typeof wx.getSystemSetting === 'function' &&
+          typeof wx.getAppAuthorizeSetting === 'function' &&
+          typeof wx.getDeviceInfo === 'function' &&
+          typeof wx.getWindowInfo === 'function' &&
+          typeof wx.getAppBaseInfo === 'function') {
+        
+        console.log('使用新API获取系统信息');
+        
+        // 使用新API获取各类信息
+        const systemSetting = wx.getSystemSetting();
+        const appAuthorizeSetting = wx.getAppAuthorizeSetting();
+        const deviceInfo = wx.getDeviceInfo();
+        const windowInfo = wx.getWindowInfo();
+        const appBaseInfo = wx.getAppBaseInfo();
+        
+        // 合并所有信息到一个对象
+        const systemInfo = {
+          ...systemSetting,
+          ...appAuthorizeSetting,
+          ...deviceInfo,
+          ...windowInfo,
+          ...appBaseInfo
+        };
+        
+        resolve(systemInfo);
+      } else {
+        // 对于不支持新API的旧版本，使用异步的wx.getSystemInfo
+        console.log('使用兼容API获取系统信息');
         wx.getSystemInfo({
           success(res) {
-            Object.assign(result, res);
+            resolve(res);
+          },
+          fail(err) {
+            console.error('获取系统信息失败:', err);
+            // 返回基本的默认信息
+            resolve({
+              platform: 'unknown',
+              system: 'unknown',
+              version: 'unknown',
+              model: 'unknown',
+              pixelRatio: 1,
+              screenWidth: 375,
+              screenHeight: 667,
+              windowWidth: 375,
+              windowHeight: 667,
+              statusBarHeight: 20,
+              language: 'zh_CN',
+              fontSizeSetting: 16
+            });
           }
         });
       }
-      
-      // 恢复我们的monkey patch
-      wx.getSystemInfoSync = function() {
-        console.warn('wx.getSystemInfoSync被弃用，使用新API代替');
-        return getSystemInfo();
-      };
-      
-      return result;
+    } catch (error) {
+      console.error('获取系统信息出错:', error);
+      reject(error);
     }
-  } catch (error) {
-    console.error('获取系统信息出错:', error);
-    return {};
-  }
+  });
 };
 
 /**
@@ -264,6 +268,32 @@ function showShareSuccess() {
   });
 }
 
+/**
+ * 测试系统信息获取功能
+ * 用于验证新API的正确性
+ */
+function testSystemInfo() {
+  console.log('开始测试系统信息API...');
+  
+  getSystemInfo()
+    .then(systemInfo => {
+      console.log('系统信息获取成功:', systemInfo);
+      
+      // 验证关键字段是否存在
+      const requiredFields = ['platform', 'system', 'version', 'model'];
+      const missingFields = requiredFields.filter(field => !systemInfo.hasOwnProperty(field));
+      
+      if (missingFields.length === 0) {
+        console.log('✅ 系统信息API测试通过');
+      } else {
+        console.warn('⚠️ 系统信息缺少字段:', missingFields);
+      }
+    })
+    .catch(error => {
+      console.error('❌ 系统信息API测试失败:', error);
+    });
+}
+
 // 导出工具函数
 module.exports = {
   // 保留原有导出
@@ -275,5 +305,7 @@ module.exports = {
   // 添加新函数
   checkShareSupport,
   enableShareMenu,
-  showShareSuccess
+  showShareSuccess,
+  // 测试函数
+  testSystemInfo
 } 

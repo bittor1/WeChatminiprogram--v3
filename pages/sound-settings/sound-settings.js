@@ -9,6 +9,8 @@ Page({
     tempFilePath: '',
     tempDuration: 0,
     formattedTempDuration: '0',
+    userSounds: [], // 用户音效库
+    showUserSounds: false, // 是否显示用户音效库
   },
 
   onLoad() {
@@ -25,6 +27,7 @@ Page({
 
     this.initRecorder();
     this.initAudioPlayer();
+    this.loadUserSounds();
   },
 
   onUnload() {
@@ -86,6 +89,27 @@ Page({
     const min = String(Math.floor(seconds / 60)).padStart(2, '0');
     const sec = String(seconds % 60).padStart(2, '0');
     return `${min}:${sec}`;
+  },
+
+  // 格式化日期
+  formatDate(timestamp) {
+    if (!timestamp) return '';
+    
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = Math.floor((now - date) / 1000); // 秒差
+    
+    if (diff < 60) {
+      return '刚刚';
+    } else if (diff < 3600) {
+      return `${Math.floor(diff / 60)}分钟前`;
+    } else if (diff < 86400) {
+      return `${Math.floor(diff / 3600)}小时前`;
+    } else if (diff < 2592000) {
+      return `${Math.floor(diff / 86400)}天前`;
+    } else {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    }
   },
 
   async loadSettings() {
@@ -184,6 +208,151 @@ Page({
       console.error('上传音效失败', e);
       wx.showToast({ title: '上传失败', icon: 'none' });
     }
+  },
+
+  // 加载用户音效库
+  loadUserSounds() {
+    wx.cloud.callFunction({
+      name: 'soundManage',
+      data: {
+        action: 'getUserSounds'
+      }
+    }).then(res => {
+      if (res.result && res.result.success) {
+        const sounds = res.result.data || [];
+        // 预处理数据，添加格式化字段
+        const formattedSounds = sounds.map(item => {
+          return {
+            ...item,
+            formattedDuration: (item.duration / 1000).toFixed(1),
+            formattedCreateTime: this.formatDate(item.createTime)
+          };
+        });
+        this.setData({
+          userSounds: formattedSounds
+        });
+        console.log('用户音效库加载成功:', formattedSounds);
+      }
+    }).catch(err => {
+      console.error('加载用户音效库失败:', err);
+    });
+  },
+
+  // 切换显示用户音效库
+  toggleUserSounds() {
+    this.setData({
+      showUserSounds: !this.data.showUserSounds
+    });
+  },
+
+  // 预览用户音效库中的音效
+  previewUserSound(e) {
+    const { soundId, fileId } = e.currentTarget.dataset;
+    if (!fileId) return;
+    
+    this.innerAudioContext.src = fileId;
+    this.innerAudioContext.play();
+  },
+
+  // 删除用户音效库中的音效
+  deleteUserSound(e) {
+    const { soundId, name } = e.currentTarget.dataset;
+    
+    wx.showModal({
+      title: '确认删除',
+      content: `确定要删除音效"${name || '投票音效'}"吗？`,
+      success: (res) => {
+        if (res.confirm) {
+          this.processDeleteUserSound(soundId);
+        }
+      }
+    });
+  },
+
+  // 处理删除用户音效
+  processDeleteUserSound(soundId) {
+    wx.showLoading({ title: '删除中...' });
+    
+    wx.cloud.callFunction({
+      name: 'soundManage',
+      data: {
+        action: 'deleteUserSound',
+        soundId: soundId
+      }
+    }).then(res => {
+      wx.hideLoading();
+      
+      if (res.result && res.result.success) {
+        wx.showToast({ title: '删除成功', icon: 'success' });
+        // 重新加载用户音效库
+        this.loadUserSounds();
+      } else {
+        wx.showToast({
+          title: res.result?.message || '删除失败',
+          icon: 'none'
+        });
+      }
+    }).catch(err => {
+      wx.hideLoading();
+      console.error('删除音效失败:', err);
+      wx.showToast({
+        title: '删除失败',
+        icon: 'none'
+      });
+    });
+  },
+
+  // 应用用户音效库中的音效到当前设置
+  applyUserSound(e) {
+    const { soundId, fileId, name } = e.currentTarget.dataset;
+    
+    wx.showModal({
+      title: '确认应用',
+      content: `确定要将"${name || '投票音效'}"设为当前音效吗？`,
+      success: (res) => {
+        if (res.confirm) {
+          this.processApplyUserSound(fileId);
+        }
+      }
+    });
+  },
+
+  // 处理应用用户音效
+  processApplyUserSound(fileId) {
+    wx.showLoading({ title: '应用中...' });
+    
+    wx.cloud.callFunction({
+      name: 'soundManage',
+      data: {
+        action: 'updateSoundSettings',
+        settingData: {
+          enabled: true,
+          soundUrl: fileId
+        }
+      }
+    }).then(res => {
+      wx.hideLoading();
+      
+      if (res.result && res.result.success) {
+        wx.showToast({ title: '应用成功', icon: 'success' });
+        this.setData({
+          enabled: true,
+          soundUrl: fileId
+        });
+      } else {
+        wx.showToast({
+          title: res.result?.message || '应用失败',
+          icon: 'none'
+        });
+      }
+    }).catch(err => {
+      wx.hideLoading();
+      console.error('应用音效失败:', err);
+      wx.showToast({
+        title: '应用失败',
+        icon: 'none'
+      });
+    });
   },
 
   goBack() { 

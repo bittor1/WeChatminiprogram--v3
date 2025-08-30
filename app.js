@@ -1,13 +1,80 @@
 // app.js
 const cloudUtils = require('./utils/cloudUtils');
 
-// 移除monkey patch，使用标准API
+// 彻底禁用已废弃的 wx.getSystemInfoSync API
+if (wx.getSystemInfoSync) {
+  const originalGetSystemInfoSync = wx.getSystemInfoSync;
+  wx.getSystemInfoSync = function() {
+    console.warn('⚠️ wx.getSystemInfoSync 已废弃，正在使用新API替代');
+    
+    // 使用同步方式返回系统信息，以保持兼容性
+    try {
+      // 尝试使用新API
+      if (typeof wx.getSystemSetting === 'function' &&
+          typeof wx.getDeviceInfo === 'function' &&
+          typeof wx.getWindowInfo === 'function' &&
+          typeof wx.getAppBaseInfo === 'function') {
+        
+        const systemSetting = wx.getSystemSetting();
+        const deviceInfo = wx.getDeviceInfo();
+        const windowInfo = wx.getWindowInfo();
+        const appBaseInfo = wx.getAppBaseInfo();
+        
+        return {
+          ...systemSetting,
+          ...deviceInfo,
+          ...windowInfo,
+          ...appBaseInfo
+        };
+      } else {
+        // 对于旧版本，尝试调用原始函数一次，如果失败则使用默认值
+        console.warn('基础库版本较低，尝试获取基础系统信息');
+        try {
+          return originalGetSystemInfoSync.call(this);
+        } catch (fallbackError) {
+          console.warn('原始API也失败，使用默认系统信息:', fallbackError);
+          return {
+            platform: 'unknown',
+            system: 'unknown',
+            version: 'unknown',
+            model: 'unknown',
+            pixelRatio: 2,
+            screenWidth: 375,
+            screenHeight: 667,
+            windowWidth: 375,
+            windowHeight: 667,
+            statusBarHeight: 20,
+            language: 'zh_CN',
+            fontSizeSetting: 16
+          };
+        }
+      }
+    } catch (error) {
+      console.error('系统信息获取失败，使用默认值:', error);
+      return {
+        platform: 'unknown',
+        system: 'unknown',
+        version: 'unknown',
+        model: 'unknown',
+        pixelRatio: 2,
+        screenWidth: 375,
+        screenHeight: 667,
+        windowWidth: 375,
+        windowHeight: 667,
+        statusBarHeight: 20,
+        language: 'zh_CN',
+        fontSizeSetting: 16
+      };
+    }
+  };
+}
+
 App({
   onLaunch: function() {
     console.log('应用初始化');
     
-    // 初始化全局数据
-    this.initializeGlobalData();
+    // 初始化云开发
+    this.initializeCloudDevelopment();
     
     // 记录当前版本
     console.log('当前版本: 1.0.2');
@@ -15,8 +82,8 @@ App({
     // 清除可能导致问题的缓存
     this.clearProblemCache();
     
-    // 检查并初始化数据库
-    this.initializeDatabase();
+    // 执行无感登录
+    this.performSilentLogin();
     
     // 检查每日投票限制重置
     this.checkDailyVoteLimitReset();
@@ -94,9 +161,8 @@ App({
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   },
   
-  // 初始化全局数据
-  initializeGlobalData: function() {
-    // 初始化云开发
+  // 初始化云开发
+  initializeCloudDevelopment: function() {
     if (wx.cloud) {
       wx.cloud.init({
         traceUser: true, // 记录用户访问、调用信息
@@ -111,22 +177,98 @@ App({
     const logs = wx.getStorageSync("logs") || []
     logs.unshift(Date.now())
     wx.setStorageSync("logs", logs)
+  },
 
-    // 登录
+  // 执行无感登录
+  performSilentLogin: function() {
+    console.log('开始无感登录...');
+    
     wx.login({
       success: (res) => {
-        // 发送 res.code 到后台换取 openId, sessionKey, unionId
-        console.log('登录成功', res.code)
+        if (res.code) {
+          console.log('获取到登录凭证:', res.code);
+          
+          // 调用登录云函数
+          wx.cloud.callFunction({
+            name: 'login',
+            data: {
+              code: res.code,
+              deviceInfo: this.getDeviceInfo()
+            }
+          }).then(loginRes => {
+            console.log('无感登录结果:', loginRes);
+            
+            if (loginRes.result && loginRes.result.success) {
+              const { token, userInfo } = loginRes.result.data;
+              
+              // 保存token和用户信息
+              wx.setStorageSync('token', token);
+              wx.setStorageSync('userInfo', userInfo);
+              
+              // 更新全局状态
+              this.globalData.userInfo = userInfo;
+              this.globalData.token = token;
+              this.globalData.isLoggedIn = true;
+              
+              console.log('无感登录成功');
+              
+              // 加载排行榜数据
+              this.refreshRankingData().catch(err => {
+                console.error('加载排行榜数据失败:', err);
+              });
+            } else {
+              console.error('无感登录失败:', loginRes.result?.message);
+              this.handleLoginFailure();
+            }
+          }).catch(err => {
+            console.error('调用登录云函数失败:', err);
+            this.handleLoginFailure();
+          });
+        } else {
+          console.error('获取登录凭证失败:', res.errMsg);
+          this.handleLoginFailure();
+        }
       },
-    })
-    
-    // 初始化rankings为空数组，避免显示默认的张三数据
-    this.globalData.rankings = [];
-    
-    // 立即加载排行榜数据
-    this.refreshRankingData().catch(err => {
-      console.error('初始化排行榜数据失败:', err);
+      fail: (err) => {
+        console.error('wx.login失败:', err);
+        this.handleLoginFailure();
+      }
     });
+  },
+
+  // 处理登录失败
+  handleLoginFailure: function() {
+    console.log('登录失败，使用游客模式');
+    
+    // 清除可能存在的无效token
+    wx.removeStorageSync('token');
+    wx.removeStorageSync('userInfo');
+    
+    // 设置游客状态
+    this.globalData.userInfo = null;
+    this.globalData.token = null;
+    this.globalData.isLoggedIn = false;
+    
+    // 仍然加载排行榜数据（游客也可以查看）
+    this.refreshRankingData().catch(err => {
+      console.error('游客模式加载排行榜数据失败:', err);
+    });
+  },
+
+  // 获取设备信息
+  getDeviceInfo: function() {
+    try {
+      const systemInfo = wx.getSystemInfoSync();
+      return {
+        platform: systemInfo.platform,
+        system: systemInfo.system,
+        version: systemInfo.version,
+        model: systemInfo.model
+      };
+    } catch (err) {
+      console.error('获取设备信息失败:', err);
+      return {};
+    }
   },
   
   // 检查并初始化数据库
@@ -236,10 +378,38 @@ App({
     });
   },
   
-  // 检查用户是否已登录 (现在检查userInfo对象)
+  // 检查用户是否已登录（基于token验证）
   checkUserLogin: function() {
-    const userInfo = wx.getStorageSync('userInfo');
-    return userInfo && userInfo._id; // 检查是否存在且有_id
+    const token = wx.getStorageSync('token');
+    return token && this.globalData.isLoggedIn;
+  },
+
+  // 验证token有效性（可选，用于重要操作前的验证）
+  validateToken: function() {
+    return new Promise((resolve, reject) => {
+      const token = wx.getStorageSync('token');
+      if (!token) {
+        resolve(false);
+        return;
+      }
+
+      // 可以调用云函数验证token
+      wx.cloud.callFunction({
+        name: 'checkSession', // 需要创建这个云函数
+        data: { token }
+      }).then(res => {
+        if (res.result && res.result.valid) {
+          resolve(true);
+        } else {
+          // token无效，清除本地数据
+          this.handleLoginFailure();
+          resolve(false);
+        }
+      }).catch(err => {
+        console.error('验证token失败:', err);
+        resolve(false);
+      });
+    });
   },
   
   // 检查转发状态
@@ -379,6 +549,8 @@ App({
   // 全局变量
   globalData: {
     userInfo: null,
+    token: null,
+    isLoggedIn: false,
     shareSupport: {
       canShareTimeline: false,
       canShowShareMenu: false

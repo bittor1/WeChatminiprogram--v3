@@ -27,8 +27,6 @@
       <view class="stat-item flex-1 flex flex-col items-center">
         <text class="stat-number text-number">{{totalVotes}}</text>
         <text class="stat-label text-small">总投票</text>
-        <text wx:if="{{voteGrowthRate > 0}}" class="vote-trend text-small text-green">+{{voteGrowthRate}}%</text>
-        <text wx:elif="{{voteGrowthRate < 0}}" class="vote-trend text-small text-red">{{voteGrowthRate}}%</text>
       </view>
       <view class="stat-item flex-1 flex flex-col items-center">
         <text class="stat-number text-number">{{totalUsers}}</text>
