@@ -1,5 +1,5 @@
 // pages/detail/detail.js
-const app = getApp();
+var app = getApp();
 
 Page({
   data: {
@@ -57,6 +57,16 @@ Page({
     showAuthDialog: false,
     _pendingAction: null, // 待执行的操作
     
+    // 投票奖励系统
+    showShareModal: false, // 显示分享弹窗
+    todayVoteStatus: {
+      upVote: { hasVoted: false, rewardCount: 0 },
+      downVote: { hasVoted: false, rewardCount: 0 }
+    },
+    shareModalType: '', // 'vote' 或 'downvote'
+    shareModalVoteType: '', // 当前分享的投票类型
+    isPendingShareReward: false, // 是否等待分享奖励
+    
     // 加载状态
     isLoading: false
   },
@@ -65,7 +75,7 @@ Page({
     console.log('Detail页面加载，参数:', options);
     
     // 获取条目ID
-    const entryId = options.id;
+    var entryId = options.id;
     
     if (entryId) {
       this.setData({
@@ -99,61 +109,84 @@ Page({
 
   onUnload: function() {
     // 清理音频资源
-    if (this.data.recorderManager) {
-      this.data.recorderManager.stop();
+    try {
+      if (this.data.recorderManager) {
+        this.data.recorderManager.stop();
+      }
+    } catch (e) {
+      console.warn('清理录音管理器失败:', e);
     }
-    if (this.data.innerAudioContext) {
-      this.data.innerAudioContext.destroy();
+    
+    try {
+      if (this.data.innerAudioContext) {
+        // 尝试多种清理方法
+        if (typeof this.data.innerAudioContext.destroy === 'function') {
+          this.data.innerAudioContext.destroy();
+        } else if (typeof this.data.innerAudioContext.stop === 'function') {
+          this.data.innerAudioContext.stop();
+        }
+        // 清除引用
+        this.data.innerAudioContext = null;
+      }
+    } catch (e) {
+      console.warn('清理音频上下文失败:', e);
     }
-    if (this.data.recordTimer) {
-      clearInterval(this.data.recordTimer);
+    
+    try {
+      if (this.data.recordTimer) {
+        clearInterval(this.data.recordTimer);
+        this.data.recordTimer = null;
+      }
+    } catch (e) {
+      console.warn('清理计时器失败:', e);
     }
   },
 
   // 初始化音频管理器
   initAudioManagers: function() {
-    const recorderManager = wx.getRecorderManager();
-    const innerAudioContext = wx.createInnerAudioContext();
+    var recorderManager = wx.getRecorderManager();
+    var innerAudioContext = wx.createInnerAudioContext();
     
     // 录音事件监听
-    recorderManager.onStart(() => {
+    var self = this;
+    recorderManager.onStart(function() {
       console.log('录音开始');
     });
     
-    recorderManager.onStop((res) => {
+    recorderManager.onStop(function(res) {
       console.log('录音结束', res);
-      this.handleRecordingStop(res);
+      self.handleRecordingStop(res);
     });
     
-    recorderManager.onError((err) => {
+    recorderManager.onError(function(err) {
       console.error('录音错误', err);
       wx.showToast({
         title: '录音失败',
         icon: 'error'
       });
-      this.setData({
+      self.setData({
         recordingState: 'idle'
       });
     });
     
     // 播放事件监听
-    innerAudioContext.onPlay(() => {
+    innerAudioContext.onPlay(function() {
       console.log('音频播放开始');
-      this.setData({
+      self.setData({
         isPreviewPlaying: true
       });
     });
     
-    innerAudioContext.onEnded(() => {
+    innerAudioContext.onEnded(function() {
       console.log('音频播放结束');
-      this.setData({
+      self.setData({
         isPreviewPlaying: false
       });
     });
     
-    innerAudioContext.onError((err) => {
+    innerAudioContext.onError(function(err) {
       console.error('音频播放错误', err);
-      this.setData({
+      self.setData({
         isPreviewPlaying: false
       });
     });
@@ -176,18 +209,25 @@ Page({
       console.log('条目详情加载结果:', res);
       
       if (res.data) {
-        const entryInfo = res.data;
+        var entryInfo = res.data;
         this.setData({
           entryInfo: entryInfo,
           shareInfo: {
             title: '来看看' + entryInfo.name + '的得吃档案',
             path: '/pages/detail/detail?id=' + this.data.entryId,
-            imageUrl: entryInfo.avatarUrl || '/images/placeholder-user.jpg'
+            imageUrl: entryInfo.avatarUrl || entryInfo.avatar || '/images/placeholder-user.jpg'
           }
         });
         
-        // 条目信息加载完成后，再加载事迹
+        // 条目信息加载完成后，再加载事迹和投票状态
         this.loadAchievements();
+        
+        // 安全加载投票状态，避免影响主流程
+        try {
+          this.loadTodayVoteStatus();
+        } catch (error) {
+          console.warn('加载投票状态失败，但不影响主流程:', error);
+        }
       } else {
         wx.showToast({
           title: '条目不存在',
@@ -236,7 +276,7 @@ Page({
 
   // 加载评论列表
   loadComments: function(isLoadMore) {
-    const page = isLoadMore ? this.data.commentPage + 1 : 1;
+    var page = isLoadMore ? this.data.commentPage + 1 : 1;
     
     wx.cloud.callFunction({
       name: 'commentManage',
@@ -252,8 +292,8 @@ Page({
       console.log('评论加载结果:', res);
       
       if (res.result && res.result.success) {
-        const newComments = res.result.comments || [];
-        const comments = isLoadMore ? this.data.comments.concat(newComments) : newComments;
+        var newComments = res.result.comments || [];
+        var comments = isLoadMore ? this.data.comments.concat(newComments) : newComments;
         
         this.setData({
           comments: comments,
@@ -299,24 +339,30 @@ Page({
       wx.cloud.callFunction({
         name: 'voteManage',
         data: {
-                  action: 'vote',
-        targetId: this.data.entryId
+          action: 'vote',
+          targetId: this.data.entryId
         }
       }).then(res => {
         wx.hideLoading();
         console.log('想吃结果:', res);
         
         if (res.result && res.result.success) {
-          // 播放想吃音效
+          // 首次投票成功
           this.playVoteSound();
-          
-          // 更新条目信息
           this.loadEntryDetail();
+          this.loadTodayVoteStatus();
+          
+          // 刷新全局排行榜数据，确保主页数据一致
+          var app = getApp();
+          app.refreshRankingData();
           
           wx.showToast({
             title: '想吃成功',
             icon: 'success'
           });
+        } else if (res.result && res.result.code === 'NEED_SHARE') {
+          // 需要通过分享获得奖励
+          this.showShareRewardModal('vote', res.result);
         } else {
           wx.showToast({
             title: res.result.message || '想吃失败',
@@ -352,13 +398,21 @@ Page({
         console.log('拒吃结果:', res);
         
         if (res.result && res.result.success) {
-          // 更新条目信息
+          // 首次投票成功
           this.loadEntryDetail();
+          this.loadTodayVoteStatus();
+          
+          // 刷新全局排行榜数据，确保主页数据一致
+          var app = getApp();
+          app.refreshRankingData();
           
           wx.showToast({
             title: '拒吃成功',
             icon: 'success'
           });
+        } else if (res.result && res.result.code === 'NEED_SHARE') {
+          // 需要通过分享获得奖励
+          this.showShareRewardModal('downvote', res.result);
         } else {
           wx.showToast({
             title: res.result.message || '拒吃失败',
@@ -387,7 +441,7 @@ Page({
       }
     }).then(res => {
       if (res.result && res.result.success && res.result.soundUrl) {
-        const audio = wx.createInnerAudioContext();
+        var audio = wx.createInnerAudioContext();
         audio.src = res.result.soundUrl;
         audio.play();
         
@@ -409,7 +463,7 @@ Page({
 
   // 提交评论
   submitComment: function() {
-    const content = this.data.commentContent.trim();
+    var content = this.data.commentContent.trim();
     if (!content) {
       wx.showToast({
         title: '请输入评论内容',
@@ -429,8 +483,8 @@ Page({
       title: '提交中...'
     });
     
-    const action = this.data.replyTo ? 'reply' : 'add';
-    const data = {
+    var action = this.data.replyTo ? 'reply' : 'add';
+    var data = {
       nominationId: this.data.entryId,
       content: content
     };
@@ -481,8 +535,8 @@ Page({
 
   // 回复评论
   replyComment: function(e) {
-    const dataset = e.currentTarget.dataset;
-    const replyInfo = {
+    var dataset = e.currentTarget.dataset;
+    var replyInfo = {
       _id: dataset.id,
       creatorName: dataset.name
     };
@@ -494,7 +548,7 @@ Page({
       
       // 聚焦到输入框
       wx.nextTick(() => {
-        const query = this.createSelectorQuery();
+        var query = this.createSelectorQuery();
         query.select('.comment-input').node((res) => {
           if (res && res.node) {
             res.node.focus();
@@ -513,7 +567,7 @@ Page({
 
   // 点赞评论
   likeComment: function(e) {
-    const commentId = e.currentTarget.dataset.id;
+    var commentId = e.currentTarget.dataset.id;
     
     this.requireLogin(() => {
       wx.cloud.callFunction({
@@ -539,8 +593,8 @@ Page({
 
   // 显示更多回复
   showMoreReplies: function(e) {
-    const commentId = e.currentTarget.dataset.id;
-    const showingMoreReplies = Object.assign({}, this.data.showingMoreReplies);
+    var commentId = e.currentTarget.dataset.id;
+    var showingMoreReplies = Object.assign({}, this.data.showingMoreReplies);
     showingMoreReplies[commentId] = true;
     
     this.setData({
@@ -559,7 +613,7 @@ Page({
     }).then(res => {
       if (res.result && res.result.success) {
         // 更新评论列表中的回复
-        const comments = this.data.comments.map(comment => {
+        var comments = this.data.comments.map(comment => {
           if (comment._id === commentId) {
             comment.replies = res.result.replies || [];
           }
@@ -598,7 +652,7 @@ Page({
 
   // 提交弹幕
   submitDanmaku: function() {
-    const text = this.data.danmakuText.trim();
+    var text = this.data.danmakuText.trim();
     if (!text) {
       wx.showToast({
         title: '请输入弹幕内容',
@@ -679,7 +733,7 @@ Page({
 
   // 提交事迹
   submitAchievement: function() {
-    const content = this.data.newAchievement.trim();
+    var content = this.data.newAchievement.trim();
     if (!content) {
       wx.showToast({
         title: '请输入事迹内容',
@@ -737,7 +791,7 @@ Page({
 
   // 删除事迹
   deleteAchievement: function(e) {
-    const achievementId = e.currentTarget.dataset.id;
+    var achievementId = e.currentTarget.dataset.id;
     
     wx.showModal({
       title: '确认删除',
@@ -759,7 +813,7 @@ Page({
             
             if (res.result && res.result.success) {
               // 从列表中移除
-              const achievements = this.data.achievements.filter(item => item._id !== achievementId);
+              var achievements = this.data.achievements.filter(item => item._id !== achievementId);
               this.setData({
                 achievements: achievements
               });
@@ -830,15 +884,16 @@ Page({
 
   // 开始录音计时
   startRecordTimer: function() {
-    this.data.recordTimer = setInterval(() => {
-      const recordTime = this.data.recordTime + 0.1;
-      this.setData({
+    var self = this;
+    this.data.recordTimer = setInterval(function() {
+      var recordTime = self.data.recordTime + 0.1;
+      self.setData({
         recordTime: recordTime,
-        formattedRecordTime: this.formatRecordTime(recordTime)
+        formattedRecordTime: self.formatRecordTime(recordTime)
       });
       
       if (recordTime >= 5) {
-        this.confirmRecording();
+        self.confirmRecording();
       }
     }, 100);
   },
@@ -976,8 +1031,8 @@ Page({
 
   // 格式化录音时间
   formatRecordTime: function(seconds) {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
+    var mins = Math.floor(seconds / 60);
+    var secs = Math.floor(seconds % 60);
     return String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
   },
 
@@ -985,9 +1040,9 @@ Page({
   formatTime: function(date) {
     if (!date) return '';
     
-    const now = new Date();
-    const target = new Date(date);
-    const diff = now.getTime() - target.getTime();
+    var now = new Date();
+    var target = new Date(date);
+    var diff = now.getTime() - target.getTime();
     
     if (diff < 60000) { // 1分钟内
       return '刚刚';
@@ -1002,7 +1057,7 @@ Page({
 
   // 通用的需要登录功能触发器（参考index页面的逻辑）
   requireLogin: function(action, actionName) {
-    const app = getApp();
+    var app = getApp();
     
     if (app.globalData.isLoggedIn) {
       // 已登录，直接执行操作
@@ -1054,7 +1109,7 @@ Page({
   handleAuthSuccess: function(e) {
     console.log('授权成功:', e.detail);
     
-    const app = getApp();
+    var app = getApp();
     
     // 更新全局用户状态
     app.globalData.isLoggedIn = true;
@@ -1095,6 +1150,18 @@ Page({
 
   // 分享给好友
   onShareAppMessage: function() {
+    // 如果是等待分享奖励的状态，分享完成后给奖励
+    if (this.data.isPendingShareReward) {
+      var self = this;
+      // 延迟执行奖励，让分享操作先完成
+      setTimeout(function() {
+        self.setData({
+          isPendingShareReward: false
+        });
+        self.getShareReward();
+      }, 1000);
+    }
+    
     return Object.assign({}, this.data.shareInfo, {
       title: this.data.shareInfo.title || '来看看这个人的得吃档案',
       path: this.data.shareInfo.path || '/pages/detail/detail?id=' + this.data.entryId,
@@ -1109,5 +1176,150 @@ Page({
       path: this.data.shareInfo.path || '/pages/detail/detail?id=' + this.data.entryId,
       imageUrl: this.data.shareInfo.imageUrl || '/images/placeholder-user.jpg'
     };
+  },
+
+  // 加载今日投票状态
+  loadTodayVoteStatus: function() {
+    // 如果未登录，不加载投票状态
+    if (!getApp().globalData.isLoggedIn) {
+      return;
+    }
+
+    wx.cloud.callFunction({
+      name: 'voteManage',
+      data: {
+        action: 'getTodayVoteStatus',
+        targetId: this.data.entryId
+      }
+    }).then(res => {
+      console.log('今日投票状态:', res);
+      if (res.result && res.result.success) {
+        this.setData({
+          todayVoteStatus: {
+            upVote: res.result.upVote || { hasVoted: false, rewardCount: 0 },
+            downVote: res.result.downVote || { hasVoted: false, rewardCount: 0 }
+          }
+        });
+      }
+    }).catch(err => {
+      console.error('加载今日投票状态失败:', err);
+    });
+  },
+
+  // 显示分享奖励弹窗
+  showShareRewardModal: function(type, voteResult) {
+    var maxRewards = 5;
+    var currentRewards = voteResult.rewardCount || 0;
+    var voteType = voteResult.voteType;
+    
+    if (currentRewards >= maxRewards) {
+      wx.showToast({
+        title: '今日奖励次数已达上限',
+        icon: 'none'
+      });
+      return;
+    }
+
+    this.setData({
+      showShareModal: true,
+      shareModalType: type,
+      shareModalVoteType: voteType,
+      'todayVoteStatus.currentRewardCount': currentRewards // 临时存储当前类型的奖励次数
+    });
+  },
+
+  // 关闭分享弹窗
+  closeShareModal: function() {
+    this.setData({
+      showShareModal: false,
+      shareModalType: ''
+    });
+  },
+
+  // 取消分享
+  cancelShare: function() {
+    this.closeShareModal();
+    wx.showToast({
+      title: '已取消分享',
+      icon: 'none'
+    });
+  },
+
+  // 确认分享获得奖励
+  confirmShare: function() {
+    // 设置分享标记，然后关闭弹窗
+    this.setData({
+      isPendingShareReward: true
+    });
+    this.closeShareModal();
+    
+    // 直接显示分享菜单
+    wx.showShareMenu({
+      withShareTicket: true,
+      menus: ['shareAppMessage']
+    });
+    
+    // 提示用户分享
+    wx.showToast({
+      title: '请点击右上角分享',
+      icon: 'none',
+      duration: 2000
+    });
+  },
+
+  // 获得分享奖励
+  getShareReward: function() {
+    wx.showLoading({
+      title: '获得奖励中...'
+    });
+
+    wx.cloud.callFunction({
+      name: 'voteManage',
+      data: {
+        action: 'getShareReward',
+        targetId: this.data.entryId,
+        voteType: this.data.shareModalVoteType
+      }
+    }).then(res => {
+      wx.hideLoading();
+      console.log('分享奖励结果:', res);
+      
+      if (res.result && res.result.success) {
+        // 更新对应类型的奖励状态
+        var voteType = this.data.shareModalVoteType;
+        var updateKey = voteType === 'up' ? 'todayVoteStatus.upVote.rewardCount' : 'todayVoteStatus.downVote.rewardCount';
+        var updateData = {};
+        updateData[updateKey] = res.result.rewardCount;
+        
+        this.setData(updateData);
+        
+        // 刷新页面数据以显示更新后的票数
+        this.loadEntryDetail();
+        
+        // 刷新全局排行榜数据，确保主页数据一致
+        var app = getApp();
+        app.refreshRankingData();
+        
+        wx.showToast({
+          title: res.result.message || '奖励获得成功！',
+          icon: 'success'
+        });
+        
+        // 播放音效
+        this.playVoteSound();
+      } else {
+        wx.showToast({
+          title: res.result.message || '获得奖励失败',
+          icon: 'error'
+        });
+      }
+    }).catch(err => {
+      wx.hideLoading();
+      console.error('获得分享奖励失败:', err);
+      wx.showToast({
+        title: '网络错误',
+        icon: 'error'
+      });
+    });
   }
 });

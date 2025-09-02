@@ -412,7 +412,7 @@ App({
                   rank: index + 1,
                   name: item.name,
                   avatar: item.avatarUrl,
-                  votes: item.votes || 0,
+                  votes: item.votes !== undefined ? item.votes : 0, // 支持负数
                   trend: item.trend || 'stable',
                   hotLevel: item.hotLevel || 1,
                   isGif: item.isGif || false,

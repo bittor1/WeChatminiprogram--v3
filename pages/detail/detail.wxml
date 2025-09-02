@@ -2,7 +2,7 @@
   <!-- 个人信息卡片 -->
   <view class="profile-card card p-16">
     <view class="profile-avatar-container">
-      <image class="profile-avatar" src="{{entryInfo.avatarUrl}}" mode="aspectFill" lazy-load="true"></image>
+      <image class="profile-avatar" src="{{entryInfo.avatarUrl || entryInfo.avatar || '/images/placeholder-user.jpg'}}" mode="aspectFill" lazy-load="true"></image>
       <view class="rank-tag">#{{entryInfo.rank}}</view>
     </view>
     
@@ -293,6 +293,25 @@
     </view>
   </view>
   
+  <!-- 分享奖励弹窗 -->
+  <view class="share-modal-overlay" wx:if="{{showShareModal}}" bindtap="closeShareModal">
+    <view class="share-modal-content" catchtap="">
+      <view class="share-modal-header">
+        <text class="share-modal-title">通过分享获得更多奖励</text>
+      </view>
+      
+      <view class="share-modal-body">
+        <text class="share-modal-text">您今日已{{shareModalType === 'vote' ? '想吃' : '拒吃'}}过，分享给朋友可再次获得奖励！</text>
+        <text class="share-modal-progress">今日{{shareModalType === 'vote' ? '想吃' : '拒吃'}}奖励次数：{{todayVoteStatus.currentRewardCount || 0}}/5</text>
+      </view>
+      
+      <view class="share-modal-buttons">
+        <button class="share-btn-cancel" bindtap="cancelShare">取消</button>
+        <button class="share-btn-confirm" bindtap="confirmShare">分享</button>
+      </view>
+    </view>
+  </view>
+
   <!-- 登录授权弹窗 -->
   <auth-dialog 
     wx:if="{{showAuthDialog}}"
