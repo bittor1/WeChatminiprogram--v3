@@ -558,29 +558,19 @@ Page({
   
   // 用于分享到好友
   onShareAppMessage() {
-    // 构建更吸引人的分享标题
-    const title = '伦敦必吃榜 - 来看看谁最受欢迎！';
-    const path = '/pages/index/index';
-    const imageUrl = 'public/placeholder.jpg'; // 使用项目中的默认图片
-    
     return {
-      title: title,
-      path: path,
-      imageUrl: imageUrl
+      title: '伦敦必吃榜',
+      path: '/pages/index/index',
+      imageUrl: '/images/share-pic.png' // 主页分享使用专用logo
     };
   },
 
   // 用于分享到朋友圈
   onShareTimeline() {
-    // 为朋友圈创建吸引人的标题
-    const title = '伦敦必吃榜 - 来看看谁最受欢迎！';
-    const query = '';
-    const imageUrl = 'public/placeholder.jpg'; // 使用项目中的默认图片
-    
     return {
-      title: title,
-      query: query,
-      imageUrl: imageUrl
+      title: '伦敦必吃榜',
+      query: '',
+      imageUrl: '/images/share-pic.png' // 使用专用分享图片
     };
   },
   

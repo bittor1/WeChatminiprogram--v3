@@ -1747,19 +1747,19 @@ Page({
       }, 1000);
     }
     
-    return Object.assign({}, this.data.shareInfo, {
-      title: this.data.shareInfo.title || '来看看这个人的得吃档案',
-      path: this.data.shareInfo.path || '/pages/detail/detail?id=' + this.data.entryId,
-      imageUrl: this.data.shareInfo.imageUrl || '/images/placeholder-user.jpg'
-    });
+    return {
+      title: '伦敦必吃榜',
+      path: '/pages/detail/detail?id=' + this.data.entryId,
+      imageUrl: this.data.entryInfo.avatarUrl || this.data.entryInfo.avatar || '/images/placeholder-user.jpg'
+    };
   },
 
   // 分享到朋友圈
   onShareTimeline: function() {
     return {
-      title: this.data.shareInfo.title || '来看看这个人的得吃档案',
-      path: this.data.shareInfo.path || '/pages/detail/detail?id=' + this.data.entryId,
-      imageUrl: this.data.shareInfo.imageUrl || '/images/placeholder-user.jpg'
+      title: '伦敦必吃榜',
+      query: 'id=' + this.data.entryId,
+      imageUrl: this.data.entryInfo.avatarUrl || this.data.entryInfo.avatar || '/images/placeholder-user.jpg'
     };
   },
 
