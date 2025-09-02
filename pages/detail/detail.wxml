@@ -44,7 +44,7 @@
         <!-- 初始状态：录制投票音效按钮 -->
         <button wx:if="{{recordingState === 'idle'}}" 
                 class="sound-btn btn btn-accent-purple" 
-                bindtap="playSound" style="width: 356rpx; display: flex; box-sizing: border-box; left: -4rpx; top: 0rpx; position: relative">
+                bindtap="recordSound" style="width: 356rpx; display: flex; box-sizing: border-box; left: -4rpx; top: 0rpx; position: relative">
           <text class="btn-icon">🎤</text>
           <text class="btn-text">录制投票音效</text>
         </button>

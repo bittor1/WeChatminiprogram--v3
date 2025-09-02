@@ -100,7 +100,7 @@
   font-weight: 600;
   color: #1F2937;
   flex: 1; /* 占据可用空间 */
-  text-align: center; /* 标题居中 */
+  text-align: left; /* 标题左对齐 */
   white-space: nowrap; /* 防止换行 */
   margin-right: 10px; /* 与按钮保持间距 */
 }
@@ -467,15 +467,17 @@
 
 /* 子抽屉头部按钮 */
 .header-btn {
-  background: #f8f9fa;
-  color: #007bff;
-  border: 1px solid #007bff;
-  border-radius: 30rpx;
-  padding: 8rpx 16rpx; /* 减小内边距让按钮更紧凑 */
-  font-size: 24rpx;
-  line-height: 1;
+  background: #f8f9fa !important;
+  color: #007bff !important;
+  border: 1px solid #007bff !important;
+  border-radius: 30rpx !important;
+  padding: 8rpx 32rpx !important; /* 将左右内边距改为32rpx */
+  font-size: 24rpx !important;
+  line-height: 1 !important;
   flex-shrink: 0; /* 防止按钮被压缩 */
-  min-width: auto; /* 移除默认最小宽度 */
+  width: 160rpx !important; /* 设置固定宽度，适应32rpx内边距 */
+  min-height: auto !important; /* 覆盖全局的min-height */
+  text-align: center !important; /* 文字居中 */
   white-space: nowrap; /* 防止按钮文字换行 */
 }
 
@@ -808,13 +810,15 @@
 
 /* 通用按钮样式 */
 .action-btn {
-  padding: 12rpx 20rpx;
-  border-radius: 8rpx;
-  font-size: 22rpx;
-  border: 1rpx solid #ddd;
-  background: white;
-  color: #333;
-  min-width: 80rpx;
+  padding: 12rpx 20rpx !important;
+  border-radius: 8rpx !important;
+  font-size: 22rpx !important;
+  border: 1rpx solid #ddd !important;
+  background: white !important;
+  color: #333 !important;
+  min-width: 80rpx !important;
+  width: auto !important; /* 覆盖可能的固定宽度 */
+  min-height: auto !important; /* 覆盖全局的min-height */
 }
 
 .view-btn {
@@ -838,15 +842,19 @@
 }
 
 .preview-btn {
-  border-color: #17a2b8;
-  color: #17a2b8;
+  border-color: #17a2b8 !important;
+  color: #17a2b8 !important;
 }
 
 .apply-btn {
-  border-color: #28a745;
-  color: #28a745;
-  background: #28a745;
-  color: white;
+  border-color: #007bff !important;
+  color: white !important;
+  background: #007bff !important;
+}
+
+.delete-btn {
+  border-color: #007bff !important;
+  color: #007bff !important;
 }
 
 /* 提示文本 */

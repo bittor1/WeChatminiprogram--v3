@@ -253,8 +253,21 @@ Component({
     },
     
     // 标记所有消息为已读
-    markAllMessagesAsRead() {
-      if (this.data.unreadMessageCount === 0) return;
+    markAllMessagesAsRead: function() {
+      console.log('✅ 全部已读按钮被点击');
+      if (this.data.unreadMessageCount === 0) {
+        console.log('📭 没有未读消息');
+        wx.showToast({
+          title: '暂无未读消息',
+          icon: 'none'
+        });
+        return;
+      }
+      
+      console.log('📮 开始标记消息为已读，未读数量:', this.data.unreadMessageCount);
+      wx.showLoading({
+        title: '处理中...'
+      });
       
       wx.cloud.callFunction({
         name: 'messageManage',
@@ -262,15 +275,35 @@ Component({
           action: 'markAllAsRead'
         }
       })
-      .then(res => {
+      .then(function(res) {
+        wx.hideLoading();
+        console.log('标记已读结果:', res);
         if (res.result && res.result.success) {
+          console.log('✅ 标记成功');
           this.setData({
             unreadMessageCount: 0
           });
+          // 刷新消息列表
+          this.loadUserMessages();
+          wx.showToast({
+            title: '已全部标记为已读',
+            icon: 'success'
+          });
+        } else {
+          console.log('❌ 标记失败:', res.result ? res.result.message : '未知错误');
+          wx.showToast({
+            title: '操作失败',
+            icon: 'error'
+          });
         }
-      })
-      .catch(err => {
+      }.bind(this))
+      .catch(function(err) {
+        wx.hideLoading();
         console.error('标记所有消息已读失败:', err);
+        wx.showToast({
+          title: '网络错误',
+          icon: 'error'
+        });
       });
     },
     
@@ -412,35 +445,44 @@ Component({
           action: 'getUserNominations'
         }
       })
-      .then(res => {
+      .then(function(res) {
+        wx.hideLoading();
+        console.log('加载提名结果:', res);
         if (res.result && res.result.success) {
-          const nominations = res.result.data || [];
+          var nominations = res.result.data || [];
           
           // 格式化时间
-          nominations.forEach(item => {
+          nominations.forEach(function(item) {
             item.formattedCreateTime = this.formatTime(item._createTime);
-          });
+          }.bind(this));
           
           this.setData({
             nominations: nominations,
             nominationsLoading: false
           });
+          console.log('✅ 提名加载成功，数量:', nominations.length);
         } else {
+          console.log('❌ 提名加载失败:', res.result ? res.result.message : '未知错误');
           this.setData({ nominationsLoading: false });
         }
-      })
-      .catch(err => {
+      }.bind(this))
+      .catch(function(err) {
+        wx.hideLoading();
         console.error('获取我的提名失败:', err);
         this.setData({ nominationsLoading: false });
         wx.showToast({
           title: '加载失败',
           icon: 'none'
         });
-      });
+      }.bind(this));
     },
     
     // 刷新提名
-    refreshNominations() {
+    refreshNominations: function() {
+      console.log('🔄 刷新提名按钮被点击');
+      wx.showLoading({
+        title: '刷新中...'
+      });
       this.loadUserNominations();
     },
     
@@ -799,27 +841,36 @@ Component({
           action: 'getUserSounds'
         }
       })
-      .then(res => {
+      .then(function(res) {
+        wx.hideLoading();
+        console.log('加载音效结果:', res);
         if (res.result && res.result.success) {
-          const sounds = res.result.data || [];
+          var sounds = res.result.data || [];
           // 格式化时间和时长
-          sounds.forEach(item => {
+          sounds.forEach(function(item) {
             item.formattedCreateTime = this.formatTime(item._createTime);
             item.formattedDuration = (item.duration || 0).toFixed(1);
-          });
+          }.bind(this));
           
           this.setData({
             userSounds: sounds,
             soundsLoading: false
           });
+          console.log('✅ 音效加载成功，数量:', sounds.length);
         } else {
+          console.log('❌ 音效加载失败:', res.result ? res.result.message : '未知错误');
           this.setData({ soundsLoading: false });
         }
-      })
-      .catch(err => {
+      }.bind(this))
+      .catch(function(err) {
+        wx.hideLoading();
         console.error('获取音效库失败:', err);
         this.setData({ soundsLoading: false });
-      });
+        wx.showToast({
+          title: '加载失败',
+          icon: 'none'
+        });
+      }.bind(this));
       
       // 同时加载当前音效设置
       this.loadSoundSettings();
@@ -839,7 +890,11 @@ Component({
     },
     
     // 刷新音效
-    refreshSounds() {
+    refreshSounds: function() {
+      console.log('🔄 刷新音效按钮被点击');
+      wx.showLoading({
+        title: '刷新中...'
+      });
       this.loadUserSounds();
     },
     

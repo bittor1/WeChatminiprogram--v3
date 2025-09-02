@@ -331,7 +331,9 @@ Page({
 
   // 想吃功能
   handleVote: function() {
+    console.log('🚀 handleVote 函数被调用');
     this.requireLogin(() => {
+      console.log('🔑 登录验证通过，开始投票');
       wx.showLoading({
         title: '想吃中...'
       });
@@ -345,9 +347,14 @@ Page({
       }).then(res => {
         wx.hideLoading();
         console.log('想吃结果:', res);
+        console.log('res.result:', res.result);
+        console.log('res.result.success:', res.result ? res.result.success : 'result为空');
+        console.log('res.result.code:', res.result ? res.result.code : 'result为空');
         
         if (res.result && res.result.success) {
           // 首次投票成功
+          console.log('✅ 进入成功分支 - 首次投票成功');
+          console.log('🎯 投票成功，准备播放音效');
           this.playVoteSound();
           this.loadEntryDetail();
           this.loadTodayVoteStatus();
@@ -362,8 +369,10 @@ Page({
           });
         } else if (res.result && res.result.code === 'NEED_SHARE') {
           // 需要通过分享获得奖励
+          console.log('📤 进入分享分支 - 需要通过分享获得奖励');
           this.showShareRewardModal('vote', res.result);
         } else {
+          console.log('❌ 进入失败分支 - 投票失败');
           wx.showToast({
             title: res.result.message || '想吃失败',
             icon: 'error'
@@ -432,6 +441,29 @@ Page({
 
   // 播放想吃音效
   playVoteSound: function() {
+    console.log('=== 开始播放投票音效 ===');
+    
+    // 检查是否启用音效
+    var soundEnabled = wx.getStorageSync('soundEnabled');
+    console.log('音效开关状态:', soundEnabled ? '已启用' : '已禁用');
+    console.log('存储中的soundEnabled值:', soundEnabled);
+    console.log('soundEnabled的类型:', typeof soundEnabled);
+    console.log('soundEnabled === true:', soundEnabled === true);
+    console.log('soundEnabled == true:', soundEnabled == true);
+    console.log('Boolean(soundEnabled):', Boolean(soundEnabled));
+    
+    if (!soundEnabled) {
+      console.log('❌ 音效已被用户禁用，不播放音效');
+      wx.showToast({
+        title: '音效已禁用',
+        icon: 'none',
+        duration: 1000
+      });
+      return; // 如果禁用就直接返回，不播放音效
+    }
+    
+    console.log('✅ 音效已启用，继续获取音效文件');
+    
     // 获取页面音效设置
     wx.cloud.callFunction({
       name: 'soundManage',
@@ -439,19 +471,34 @@ Page({
         action: 'getPageSound',
         pageId: 'detail_想吃'
       }
-    }).then(res => {
-      if (res.result && res.result.success && res.result.soundUrl) {
+    }).then(function(res) {
+      console.log('获取页面音效结果:', res);
+      if (res.result && res.result.success && res.result.data && res.result.data.fileId) {
+        console.log('🎵 找到音效文件，开始播放:', res.result.data.fileId);
         var audio = wx.createInnerAudioContext();
-        audio.src = res.result.soundUrl;
-        audio.play();
+        audio.src = res.result.data.fileId; // 使用fileId作为音频源
         
-        audio.onError((err) => {
-          console.error('音效播放失败:', err);
+        audio.onPlay(function() {
+          console.log('🔊 音效播放开始');
         });
+        
+        audio.onEnded(function() {
+          console.log('🔇 音效播放完成');
+        });
+        
+        audio.onError(function(err) {
+          console.error('❌ 音效播放失败:', err);
+        });
+        
+        audio.play();
+      } else {
+        console.log('⚠️ 没有设置音效或音效不存在');
       }
-    }).catch(err => {
-      console.error('获取音效失败:', err);
+    }).catch(function(err) {
+      console.error('❌ 获取音效失败:', err);
     });
+    
+    console.log('=== 投票音效处理完成 ===');
   },
 
   // 评论输入
@@ -982,20 +1029,40 @@ Page({
       console.log('音频上传结果:', res);
       
       if (res.fileID) {
-        // 保存音效设置
+        // 先保存音效到用户音效库
         return wx.cloud.callFunction({
           name: 'soundManage',
           data: {
-            action: 'bindPageSound',
-            pageId: 'detail_想吃',
-            soundId: res.fileID
+            action: 'saveUserSound',
+            soundData: {
+              fileId: res.fileID,
+              duration: this.data.soundDuration,
+              name: '投票音效'
+            }
           }
         });
       } else {
         throw new Error('文件上传失败');
       }
     }).then(res => {
+      console.log('音效保存结果:', res);
+      
+      if (res.result && res.result.success && res.result.soundId) {
+        // 使用返回的soundId绑定页面音效
+        return wx.cloud.callFunction({
+          name: 'soundManage',
+          data: {
+            action: 'bindPageSound',
+            pageId: 'detail_想吃',
+            soundId: res.result.soundId
+          }
+        });
+      } else {
+        throw new Error(res.result.message || '保存音效失败');
+      }
+    }).then(res => {
       wx.hideLoading();
+      console.log('音效绑定结果:', res);
       
       if (res.result && res.result.success) {
         this.setData({
@@ -1010,7 +1077,7 @@ Page({
         });
       } else {
         wx.showToast({
-          title: '设置失败',
+          title: res.result.message || '设置失败',
           icon: 'error'
         });
       }
@@ -1018,7 +1085,7 @@ Page({
       wx.hideLoading();
       console.error('音效保存失败:', err);
       wx.showToast({
-        title: '保存失败',
+        title: err.message || '保存失败',
         icon: 'error'
       });
     });
@@ -1026,6 +1093,7 @@ Page({
 
   // 播放音效
   playSound: function() {
+    console.log('🎯 手动播放音效按钮被点击');
     this.playVoteSound();
   },
 
@@ -1306,6 +1374,7 @@ Page({
         });
         
         // 播放音效
+        console.log('🎯 分享奖励获得成功，准备播放音效');
         this.playVoteSound();
       } else {
         wx.showToast({
