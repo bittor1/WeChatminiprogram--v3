@@ -7,6 +7,23 @@ Page({
     entryInfo: {},
     entryId: '',
     
+    // 缓存相关
+    dataCache: {
+      entryInfo: null,
+      comments: null,
+      danmakus: null,
+      achievements: null,
+      voteStatus: null,
+      lastUpdateTime: 0
+    },
+    cacheTimeout: 30000, // 30秒缓存有效期
+    
+    // 加载状态控制
+    loadingStatus: {
+      isLoading: false,
+      loadingStartTime: 0
+    },
+    
     // 投票相关
     voteLimit: 10,
     downvoteLimit: 5,
@@ -68,7 +85,11 @@ Page({
     isPendingShareReward: false, // 是否等待分享奖励
     
     // 加载状态
-    isLoading: false
+    isLoading: false,
+    
+    // 骨架屏控制
+    showSkeleton: true,
+    contentLoaded: false
   },
 
   onLoad: function(options) {
@@ -85,10 +106,8 @@ Page({
       // 初始化音频管理器
       this.initAudioManagers();
       
-      // 加载页面数据
-      this.loadEntryDetail();
-      this.loadComments();
-      this.loadDanmakus();
+      // 并行加载页面数据
+      this.loadPageDataParallel();
     } else {
       wx.showToast({
         title: '参数错误',
@@ -101,10 +120,43 @@ Page({
   },
 
   onShow: function() {
-    // 重新加载数据以确保最新状态
+    // 智能重新加载：只在必要时更新
     if (this.data.entryId) {
-      this.loadEntryDetail();
+      // 如果缓存已过期，才重新加载
+      if (!this.isCacheValid()) {
+        console.log('🔄 onShow: 缓存过期，重新加载数据');
+        this.loadPageDataParallel();
+      } else {
+        console.log('⚡ onShow: 使用有效缓存，跳过加载');
+        // 只刷新投票状态（这个数据变化频率较高）
+        this.refreshVoteStatusOnly();
+      }
     }
+  },
+
+  // 只刷新投票状态
+  refreshVoteStatusOnly: function() {
+    wx.cloud.callFunction({
+      name: 'voteManage',
+      data: {
+        action: 'getTodayVoteStatus',
+        entryId: this.data.entryId
+      }
+    }).then(function(res) {
+      if (res.result && res.result.success) {
+        var voteStatus = res.result.data || {
+          upVote: { hasVoted: false, rewardCount: 0 },
+          downVote: { hasVoted: false, rewardCount: 0 }
+        };
+        
+        // 只更新投票状态，不更新整个缓存
+        this.setData({
+          todayVoteStatus: voteStatus
+        });
+      }
+    }.bind(this)).catch(function(err) {
+      console.error('刷新投票状态失败:', err);
+    });
   },
 
   onUnload: function() {
@@ -194,6 +246,454 @@ Page({
     this.setData({
       recorderManager: recorderManager,
       innerAudioContext: innerAudioContext
+    });
+  },
+
+  // 检查缓存是否有效
+  isCacheValid: function() {
+    var currentTime = Date.now();
+    var lastUpdateTime = this.data.dataCache.lastUpdateTime;
+    
+    // 如果从未更新过缓存，直接返回false
+    if (lastUpdateTime === 0) {
+      console.log('🗃️ 缓存检查: 无缓存数据');
+      return false;
+    }
+    
+    var timeDiff = currentTime - lastUpdateTime;
+    var isValid = timeDiff < this.data.cacheTimeout;
+    console.log('🗃️ 缓存检查:', isValid ? '有效' : '已过期', '时间差:', timeDiff, 'ms', '阈值:', this.data.cacheTimeout, 'ms');
+    return isValid;
+  },
+
+  // 从缓存加载数据
+  loadFromCache: function() {
+    console.log('📦 从缓存加载数据');
+    var cache = this.data.dataCache;
+    
+    // 应用缓存的数据
+    var updateData = {};
+    
+    if (cache.entryInfo) {
+      updateData.entryInfo = cache.entryInfo;
+      updateData.shareInfo = {
+        title: '来看看' + cache.entryInfo.name + '的得吃档案',
+        path: '/pages/detail/detail?id=' + this.data.entryId,
+        imageUrl: cache.entryInfo.avatarUrl || cache.entryInfo.avatar || '/images/placeholder-user.jpg'
+      };
+    }
+    
+    if (cache.comments) {
+      updateData.comments = cache.comments.data;
+      updateData.commentCount = cache.comments.total;
+      updateData.hasMoreComments = cache.comments.data.length >= 10;
+    }
+    
+    if (cache.danmakus) {
+      updateData.danmakus = cache.danmakus;
+      updateData.danmakuList = cache.danmakus;
+    }
+    
+    if (cache.achievements) {
+      updateData.achievements = cache.achievements;
+    }
+    
+    if (cache.voteStatus) {
+      updateData.todayVoteStatus = cache.voteStatus;
+    }
+    
+    this.setData(updateData);
+    return Object.keys(updateData).length > 0;
+  },
+
+  // 更新缓存
+  updateCache: function(type, data) {
+    var cache = this.data.dataCache;
+    cache[type] = data;
+    cache.lastUpdateTime = Date.now();
+    
+    this.setData({
+      dataCache: cache
+    });
+    
+    console.log('💾 更新缓存:', type);
+  },
+
+  // 并行加载页面数据 - 性能优化
+  loadPageDataParallel: function() {
+    console.log('🚀 开始并行加载页面数据');
+    
+    // 开始性能监控
+    var performanceTracker = null;
+    try {
+      performanceTracker = app.performanceMonitor.startMonitoring('pageLoad', this.data.entryId);
+    } catch (e) {
+      console.warn('⚠️ 性能监控初始化失败:', e);
+      // 创建一个空的追踪器作为备用
+      performanceTracker = {
+        end: function() {
+          console.log('⏱️ 使用备用性能监控');
+          return 0;
+        }
+      };
+    }
+    
+    // 防止重复加载
+    if (this.data.loadingStatus.isLoading) {
+      console.log('⚠️ 正在加载中，跳过重复请求');
+      return;
+    }
+    
+    var startTime = Date.now();
+    
+    // 设置加载状态
+    this.setData({
+      'loadingStatus.isLoading': true,
+      'loadingStatus.loadingStartTime': startTime
+    });
+    
+    // 首先检查本地缓存
+    if (this.isCacheValid() && this.loadFromCache()) {
+      console.log('⚡ 使用本地缓存数据，跳过网络请求');
+      this.setData({
+        'loadingStatus.isLoading': false,
+        showSkeleton: false,
+        contentLoaded: true
+      });
+      wx.showToast({
+        title: '加载完成',
+        icon: 'success',
+        duration: 500
+      });
+      return;
+    }
+    
+    // 检查全局预加载数据
+    var preloadedData = app.preloadManager.getPreloadedData(this.data.entryId);
+    if (preloadedData) {
+      console.log('⚡ 使用预加载数据，超快速度！');
+      
+      // 应用预加载数据
+      if (preloadedData.entryData && preloadedData.entryData.data) {
+        var entryInfo = preloadedData.entryData.data;
+        this.updateCache('entryInfo', entryInfo);
+        
+        // 根据网络状况优化图片URL
+        var networkStrategy = app.networkManager.getLoadingStrategy();
+        var optimizedAvatarUrl = app.imageOptimizer.optimizeImageUrl(
+          entryInfo.avatarUrl || entryInfo.avatar, 
+          networkStrategy.imageQuality
+        );
+        var optimizedGifUrl = app.imageOptimizer.checkGifSize(entryInfo.gifUrl);
+        
+        // 预加载关键图片
+        var imagesToPreload = [optimizedAvatarUrl];
+        if (optimizedGifUrl) imagesToPreload.push(optimizedGifUrl);
+        app.imageOptimizer.preloadImages(imagesToPreload);
+        
+        this.setData({
+          entryInfo: Object.assign({}, entryInfo, {
+            avatarUrl: optimizedAvatarUrl,
+            gifUrl: optimizedGifUrl
+          }),
+          shareInfo: {
+            title: '来看看' + entryInfo.name + '的得吃档案',
+            path: '/pages/detail/detail?id=' + this.data.entryId,
+            imageUrl: optimizedAvatarUrl || '/images/placeholder-user.jpg'
+          },
+          showSkeleton: false,
+          contentLoaded: true,
+          'loadingStatus.isLoading': false
+        });
+      }
+      
+      if (preloadedData.commentData && preloadedData.commentData.result && preloadedData.commentData.result.success) {
+        var comments = preloadedData.commentData.result.comments || [];
+        var commentData = {
+          data: comments,
+          total: preloadedData.commentData.result.total || 0
+        };
+        this.updateCache('comments', commentData);
+        
+        this.setData({
+          comments: comments,
+          commentCount: preloadedData.commentData.result.total || 0,
+          hasMoreComments: comments.length >= 10
+        });
+      }
+      
+      // 后台加载其他数据
+      this.loadSecondaryData();
+      
+      var endTime = Date.now();
+      var loadTime = 0;
+      try {
+        loadTime = performanceTracker ? performanceTracker.end() : 0;
+      } catch (e) {
+        console.warn('⚠️ 性能监控结束失败:', e);
+      }
+      console.log('🚀 预加载数据应用完成，耗时:', endTime - startTime, 'ms');
+      
+      // 输出性能报告
+      var report = app.performanceMonitor.getPerformanceReport();
+      console.log('📊 性能报告:', report);
+      
+      return;
+    }
+    
+    // 显示主加载状态
+    wx.showLoading({
+      title: '加载中...'
+    });
+    
+    // 同时发起所有请求
+    var promises = [];
+    
+    // 1. 加载条目详情（最重要，优先级最高）
+    var entryPromise = wx.cloud.database().collection('entries').doc(this.data.entryId).get();
+    promises.push(entryPromise);
+    
+    // 2. 加载评论（次要内容）
+    var commentPromise = wx.cloud.callFunction({
+      name: 'commentManage',
+      data: {
+        action: 'list',
+        data: {
+          nominationId: this.data.entryId,
+          page: 1,
+          limit: 10
+        }
+      }
+    });
+    promises.push(commentPromise);
+    
+    // 3. 加载弹幕（次要内容）
+    var danmakuPromise = wx.cloud.callFunction({
+      name: 'danmakuManage',
+      data: {
+        action: 'get',
+        targetId: this.data.entryId
+      }
+    });
+    promises.push(danmakuPromise);
+    
+    // 等待主要内容加载完成
+    entryPromise.then(function(res) {
+      console.log('✅ 条目详情加载完成');
+      if (res.data) {
+        var entryInfo = res.data;
+        
+        // 根据网络状况优化图片URL
+        var networkStrategy = app.networkManager.getLoadingStrategy();
+        var optimizedAvatarUrl = app.imageOptimizer.optimizeImageUrl(
+          entryInfo.avatarUrl || entryInfo.avatar, 
+          networkStrategy.imageQuality
+        );
+        var optimizedGifUrl = app.imageOptimizer.checkGifSize(entryInfo.gifUrl);
+        
+        // 创建优化后的entryInfo
+        var optimizedEntryInfo = Object.assign({}, entryInfo, {
+          avatarUrl: optimizedAvatarUrl,
+          gifUrl: optimizedGifUrl
+        });
+        
+        // 更新缓存
+        this.updateCache('entryInfo', optimizedEntryInfo);
+        
+        // 预加载关键图片
+        var imagesToPreload = [optimizedAvatarUrl];
+        if (optimizedGifUrl) imagesToPreload.push(optimizedGifUrl);
+        app.imageOptimizer.preloadImages(imagesToPreload);
+        
+        this.setData({
+          entryInfo: optimizedEntryInfo,
+          shareInfo: {
+            title: '来看看' + entryInfo.name + '的得吃档案',
+            path: '/pages/detail/detail?id=' + this.data.entryId,
+            imageUrl: optimizedAvatarUrl || '/images/placeholder-user.jpg'
+          }
+        });
+        
+        // 主要内容加载完成，立即显示内容
+        wx.hideLoading();
+        
+        // 隐藏骨架屏，显示真实内容
+        this.setData({
+          showSkeleton: false,
+          contentLoaded: true
+        });
+        
+        // 后台继续加载次要内容
+        this.loadSecondaryData();
+      } else {
+        wx.hideLoading();
+        wx.showToast({
+          title: '条目不存在',
+          icon: 'error'
+        });
+        setTimeout(function() {
+          wx.navigateBack();
+        }, 1500);
+      }
+    }.bind(this)).catch(function(err) {
+      wx.hideLoading();
+      console.error('加载条目详情失败:', err);
+      wx.showToast({
+        title: '加载失败',
+        icon: 'error'
+      });
+    });
+    
+    // 处理评论数据
+    commentPromise.then(function(res) {
+      console.log('✅ 评论数据加载完成');
+      if (res.result && res.result.success) {
+        var comments = res.result.comments || [];
+        var commentData = {
+          data: comments,
+          total: res.result.total || 0
+        };
+        
+        // 更新缓存
+        this.updateCache('comments', commentData);
+        
+        this.setData({
+          comments: comments,
+          commentCount: res.result.total || 0,
+          hasMoreComments: comments.length >= 10
+        });
+      }
+    }.bind(this)).catch(function(err) {
+      console.error('评论加载失败:', err);
+    });
+    
+    // 处理弹幕数据
+    danmakuPromise.then(function(res) {
+      console.log('✅ 弹幕数据加载完成');
+      if (res.result && res.result.success) {
+        var danmakus = res.result.data || [];
+        
+        // 更新缓存
+        this.updateCache('danmakus', danmakus);
+        
+        this.setData({
+          danmakus: danmakus,
+          danmakuList: danmakus
+        });
+      }
+    }.bind(this)).catch(function(err) {
+      console.error('弹幕加载失败:', err);
+    });
+    
+    // 等待所有请求完成，计算总耗时
+    Promise.all(promises).then(function() {
+      var endTime = Date.now();
+      var loadTime = 0;
+      try {
+        loadTime = performanceTracker ? performanceTracker.end() : 0;
+      } catch (e) {
+        console.warn('⚠️ 性能监控结束失败:', e);
+      }
+      console.log('🎯 所有数据加载完成，总耗时:', endTime - startTime, 'ms');
+      
+      // 输出性能报告
+      var report = app.performanceMonitor.getPerformanceReport();
+      console.log('📊 性能报告:', report);
+      
+      // 重置加载状态
+      this.setData({
+        'loadingStatus.isLoading': false
+      });
+    }.bind(this)).catch(function(err) {
+      console.error('部分数据加载失败:', err);
+      // 即使失败也要结束监控
+      try {
+        if (performanceTracker) performanceTracker.end();
+      } catch (e) {
+        console.warn('⚠️ 性能监控结束失败:', e);
+      }
+      
+      // 即使失败也要重置加载状态
+      this.setData({
+        'loadingStatus.isLoading': false
+      });
+    }.bind(this));
+  },
+
+  // 加载次要数据（事迹、投票状态等）
+  loadSecondaryData: function() {
+    console.log('🔄 开始加载次要数据');
+    
+    // 并行加载事迹和投票状态
+    var secondaryPromises = [];
+    
+    // 加载事迹（需要条目信息中的创建者ID）
+    var achievementPromise = null;
+    if (this.data.entryInfo && this.data.entryInfo.createdBy) {
+      achievementPromise = wx.cloud.callFunction({
+        name: 'achievementManage',
+        data: {
+          action: 'get',
+          userId: this.data.entryInfo.createdBy
+        }
+      });
+      secondaryPromises.push(achievementPromise);
+    } else {
+      console.warn('⚠️ 条目信息不完整，跳过事迹加载');
+    }
+    
+    // 加载投票状态
+    var voteStatusPromise = wx.cloud.callFunction({
+      name: 'voteManage',
+      data: {
+        action: 'getTodayVoteStatus',
+        entryId: this.data.entryId
+      }
+    });
+    secondaryPromises.push(voteStatusPromise);
+    
+    // 处理事迹数据
+    if (achievementPromise) {
+      achievementPromise.then(function(res) {
+        console.log('✅ 事迹数据加载完成');
+        if (res.result && res.result.success) {
+          var achievements = res.result.achievements || [];
+          
+          // 更新缓存
+          this.updateCache('achievements', achievements);
+          
+          this.setData({
+            achievements: achievements
+          });
+        }
+      }.bind(this)).catch(function(err) {
+        console.error('事迹加载失败:', err);
+      });
+    } else {
+      // 如果没有事迹数据，设置为空数组
+      this.setData({
+        achievements: []
+      });
+    }
+    
+    // 处理投票状态
+    voteStatusPromise.then(function(res) {
+      console.log('✅ 投票状态加载完成');
+      if (res.result && res.result.success) {
+        var voteStatus = res.result.data || {
+          upVote: { hasVoted: false, rewardCount: 0 },
+          downVote: { hasVoted: false, rewardCount: 0 }
+        };
+        
+        // 更新缓存
+        this.updateCache('voteStatus', voteStatus);
+        
+        this.setData({
+          todayVoteStatus: voteStatus
+        });
+      }
+    }.bind(this)).catch(function(err) {
+      console.error('投票状态加载失败:', err);
     });
   },
 

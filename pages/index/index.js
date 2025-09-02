@@ -199,9 +199,17 @@ Page({
     return rankings.filter(item => item.votes >= 100).length;
   },
   
-  // 跳转到详情页
+  // 跳转到详情页 - 智能预加载优化
   goToDetail(e) {
     const id = e.currentTarget.dataset.id;
+    
+    console.log('🎯 用户点击详情页，开始智能预加载:', id);
+    
+    // 立即开始预加载数据
+    const app = getApp();
+    app.preloadManager.preloadDetailData(id);
+    
+    // 跳转到详情页
     wx.navigateTo({
       url: `/pages/detail/detail?id=${id}`
     });

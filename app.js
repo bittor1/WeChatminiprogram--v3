@@ -73,6 +73,12 @@ App({
   onLaunch: function() {
     console.log('应用初始化');
     
+    // 初始化网络管理器
+    this.networkManager.init();
+    
+    // 测试性能监控器
+    this.performanceMonitor.test();
+    
     // 初始化云开发
     this.initializeCloudDevelopment();
     
@@ -662,6 +668,292 @@ App({
   },
   
   // 全局变量
+  // 全局预加载管理器
+  preloadManager: {
+    cache: new Map(),
+    preloadQueue: [],
+    
+    // 预加载detail页面数据
+    preloadDetailData: function(entryId) {
+      if (!entryId || this.cache.has('detail_' + entryId)) {
+        return; // 已经预加载过
+      }
+      
+      console.log('🚀 开始预加载 detail 数据:', entryId);
+      
+      // 预加载条目详情
+      var detailPromise = wx.cloud.database().collection('entries').doc(entryId).get();
+      
+      // 预加载评论
+      var commentPromise = wx.cloud.callFunction({
+        name: 'commentManage',
+        data: {
+          action: 'list',
+          data: {
+            nominationId: entryId,
+            page: 1,
+            limit: 10
+          }
+        }
+      });
+      
+      // 缓存预加载结果
+      Promise.all([detailPromise, commentPromise]).then(function(results) {
+        this.cache.set('detail_' + entryId, {
+          entryData: results[0],
+          commentData: results[1],
+          timestamp: Date.now()
+        });
+        console.log('✅ detail 数据预加载完成:', entryId);
+      }.bind(this)).catch(function(err) {
+        console.error('❌ detail 数据预加载失败:', err);
+      });
+    },
+    
+    // 获取预加载的数据
+    getPreloadedData: function(entryId) {
+      var cacheKey = 'detail_' + entryId;
+      var cached = this.cache.get(cacheKey);
+      
+      if (cached && (Date.now() - cached.timestamp < 60000)) { // 60秒有效期
+        console.log('📦 使用预加载数据:', entryId);
+        return cached;
+      }
+      
+      // 清除过期缓存
+      if (cached) {
+        this.cache.delete(cacheKey);
+      }
+      
+      return null;
+    },
+    
+    // 清除缓存
+    clearCache: function() {
+      this.cache.clear();
+      console.log('🗑️ 清除预加载缓存');
+    }
+  },
+
+  // 图片优化管理器
+  imageOptimizer: {
+    // 配置选项
+    config: {
+      enablePreloading: true, // 是否启用图片预加载
+      maxPreloadCount: 5 // 最大预加载图片数量
+    },
+    // 检查图片大小并优化
+    optimizeImageUrl: function(originalUrl, maxSize) {
+      if (!originalUrl) return originalUrl;
+      
+      // 检查是否是云存储图片
+      if (originalUrl.includes('tcb.qcloud.la') || originalUrl.includes('myqcloud.com')) {
+        // 添加图片处理参数
+        var separator = originalUrl.includes('?') ? '&' : '?';
+        
+        // 根据maxSize设置不同的压缩参数
+        if (maxSize === 'thumbnail') {
+          // 缩略图：200x200，质量70%
+          return originalUrl + separator + 'imageView2/1/w/200/h/200/q/70';
+        } else if (maxSize === 'medium') {
+          // 中等大小：600x600，质量80%
+          return originalUrl + separator + 'imageView2/1/w/600/h/600/q/80';
+        } else if (maxSize === 'large') {
+          // 大图：1200x1200，质量85%
+          return originalUrl + separator + 'imageView2/1/w/1200/h/1200/q/85';
+        }
+      }
+      
+      return originalUrl;
+    },
+    
+    // 预加载关键图片（微信小程序优化版）
+    preloadImages: function(imageUrls) {
+      // 检查是否启用预加载
+      if (!this.config.enablePreloading) {
+        console.log('🖼️ 图片预加载已禁用');
+        return;
+      }
+      
+      if (!Array.isArray(imageUrls)) return;
+      
+      // 限制预加载数量
+      var urlsToPreload = imageUrls.slice(0, this.config.maxPreloadCount);
+      
+      urlsToPreload.forEach(function(url) {
+        if (url) {
+          try {
+            // 微信小程序中图片预加载的最佳实践：
+            // 1. 使用 wx.getImageInfo 触发图片加载
+            // 2. 更轻量，不会实际下载文件
+            wx.getImageInfo({
+              src: url,
+              success: function(res) {
+                console.log('🖼️ 图片预加载完成:', url, res.width + 'x' + res.height);
+              },
+              fail: function(err) {
+                console.warn('⚠️ 图片预加载失败:', url, err);
+              }
+            });
+          } catch (e) {
+            console.warn('⚠️ 图片预加载异常:', url, e);
+          }
+        }
+      });
+    },
+    
+    // GIF优化：检查文件大小
+    checkGifSize: function(gifUrl) {
+      if (!gifUrl || !gifUrl.includes('.gif')) return gifUrl;
+      
+      // 对于GIF，添加格式转换参数，转为WebP或压缩
+      var separator = gifUrl.includes('?') ? '&' : '?';
+      
+      // 尝试转换为WebP格式（更小的文件大小）
+      return gifUrl + separator + 'imageView2/2/w/800/format/webp/q/75';
+    }
+  },
+
+  // 网络状况管理器
+  networkManager: {
+    networkType: 'unknown',
+    isSlowNetwork: false,
+    
+    // 初始化网络监控
+    init: function() {
+      var self = this;
+      
+      // 获取当前网络状态
+      wx.getNetworkType({
+        success: function(res) {
+          self.networkType = res.networkType;
+          self.isSlowNetwork = (res.networkType === '2g' || res.networkType === 'slow-2g');
+          console.log('📶 当前网络类型:', res.networkType, self.isSlowNetwork ? '(慢网络)' : '(快网络)');
+        }
+      });
+      
+      // 监听网络状态变化
+      wx.onNetworkStatusChange(function(res) {
+        self.networkType = res.networkType;
+        self.isSlowNetwork = (res.networkType === '2g' || res.networkType === 'slow-2g');
+        console.log('📶 网络状态变化:', res.networkType, self.isSlowNetwork ? '(慢网络)' : '(快网络)');
+      });
+    },
+    
+    // 获取适合当前网络的加载策略
+    getLoadingStrategy: function() {
+      if (this.isSlowNetwork) {
+        return {
+          imageQuality: 'thumbnail', // 低质量图片
+          enablePreload: false, // 禁用预加载
+          batchSize: 5, // 小批量加载
+          timeout: 10000 // 更长超时时间
+        };
+      } else {
+        return {
+          imageQuality: 'medium', // 中等质量图片
+          enablePreload: true, // 启用预加载
+          batchSize: 10, // 正常批量加载
+          timeout: 5000 // 正常超时时间
+        };
+      }
+    }
+  },
+
+  // 性能监控管理器
+  performanceMonitor: {
+    metrics: {
+      pageLoadTimes: [],
+      networkRequestTimes: [],
+      imageLoadTimes: [],
+      cacheHitRate: 0
+    },
+    
+    // 开始性能监控
+    startMonitoring: function(type, id) {
+      var self = this;
+      var startTime = Date.now();
+      return {
+        type: type,
+        id: id || 'default',
+        startTime: startTime,
+        
+        // 结束监控
+        end: function() {
+          var endTime = Date.now();
+          var duration = endTime - startTime;
+          
+          self.recordMetric(type, duration);
+          console.log('⏱️ 性能监控 [' + type + ']:', duration + 'ms');
+          
+          return duration;
+        }
+      };
+    },
+    
+    // 记录性能指标
+    recordMetric: function(type, duration) {
+      switch(type) {
+        case 'pageLoad':
+          this.metrics.pageLoadTimes.push(duration);
+          if (this.metrics.pageLoadTimes.length > 50) {
+            this.metrics.pageLoadTimes.shift(); // 保持最近50条记录
+          }
+          break;
+        case 'networkRequest':
+          this.metrics.networkRequestTimes.push(duration);
+          if (this.metrics.networkRequestTimes.length > 100) {
+            this.metrics.networkRequestTimes.shift();
+          }
+          break;
+        case 'imageLoad':
+          this.metrics.imageLoadTimes.push(duration);
+          if (this.metrics.imageLoadTimes.length > 50) {
+            this.metrics.imageLoadTimes.shift();
+          }
+          break;
+      }
+    },
+    
+    // 获取性能报告
+    getPerformanceReport: function() {
+      var calculateAverage = function(arr) {
+        return arr.length > 0 ? arr.reduce(function(a, b) { return a + b; }) / arr.length : 0;
+      };
+      
+      return {
+        averagePageLoadTime: Math.round(calculateAverage(this.metrics.pageLoadTimes)),
+        averageNetworkTime: Math.round(calculateAverage(this.metrics.networkRequestTimes)),
+        averageImageLoadTime: Math.round(calculateAverage(this.metrics.imageLoadTimes)),
+        cacheHitRate: this.metrics.cacheHitRate,
+        totalSamples: {
+          pageLoads: this.metrics.pageLoadTimes.length,
+          networkRequests: this.metrics.networkRequestTimes.length,
+          imageLoads: this.metrics.imageLoadTimes.length
+        }
+      };
+    },
+    
+    // 更新缓存命中率
+    updateCacheHitRate: function(hit, total) {
+      this.metrics.cacheHitRate = total > 0 ? Math.round((hit / total) * 100) : 0;
+    },
+    
+    // 测试性能监控器
+    test: function() {
+      console.log('🧪 测试性能监控器...');
+      try {
+        var tracker = this.startMonitoring('test', 'test');
+        setTimeout(function() {
+          var duration = tracker.end();
+          console.log('✅ 性能监控器测试成功，耗时:', duration + 'ms');
+        }, 100);
+      } catch (e) {
+        console.error('❌ 性能监控器测试失败:', e);
+      }
+    }
+  },
+
   globalData: {
     userInfo: null,
     token: null,
