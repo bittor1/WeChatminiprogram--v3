@@ -186,7 +186,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: -24rpx;
+  margin-top: -14rpx; /* 从36rpx调整为-14rpx，上移50rpx（约25px） */
   margin-bottom: 24rpx;
 }
 
@@ -196,7 +196,7 @@
 
 .remove-avatar-btn {
   position: absolute;
-  top: -12rpx;
+  top: -4rpx; /* 从-2rpx调整为-4rpx，上移2rpx（约1px） */
   right: -12rpx;
   width: 48rpx;
   height: 48rpx;

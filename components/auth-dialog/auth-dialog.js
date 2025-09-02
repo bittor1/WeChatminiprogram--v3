@@ -1,52 +1,38 @@
 // components/auth-dialog/auth-dialog.js
-const app = getApp();
-
 Component({
+  properties: {
+    show: {
+      type: Boolean,
+      value: false
+    }
+  },
+  
   data: {
-    show: false,
     avatarUrl: '',
     nickname: '',
-    callbacks: {},
-    isSaving: false // 用于防止重复提交
+    isSaving: false
   },
+  
   methods: {
-    preventBubble: function() {
-      // 阻止事件冒泡
-    },
-    showDialog(callbacks = {}) {
+    // 选择头像 - 使用新的chooseAvatar接口
+    onChooseAvatar(e) {
+      const { avatarUrl } = e.detail;
+      console.log('选择头像:', avatarUrl);
       this.setData({
-        show: true,
-        avatarUrl: '',
-        nickname: '',
-        callbacks: callbacks
+        avatarUrl
       });
-    },
-
-    hideDialog() {
-      this.setData({ show: false });
-    },
-
-    preventClose() {
-      // 阻止点击遮罩关闭
     },
     
-    onChooseAvatar(e) {
-      if (this.data.isSaving) return;
-      const { avatarUrl } = e.detail;
-      this.setData({
-        avatarUrl: avatarUrl,
-        tempAvatarPath: avatarUrl
-      });
-    },
-
+    // 输入昵称 - 支持type="nickname"的快速选择
     onNicknameInput(e) {
       this.setData({
         nickname: e.detail.value
       });
     },
 
-    async handleSaveAndLogin() {
-      if (!this.data.tempAvatarPath || !this.data.nickname.trim()) {
+    // 确认登录
+    async handleConfirm() {
+      if (!this.data.avatarUrl || !this.data.nickname.trim()) {
         wx.showToast({
           title: '请选择头像并输入昵称',
           icon: 'none'
@@ -65,26 +51,36 @@ Component({
       try {
         // 1. 上传头像到云存储
         const uploadResult = await wx.cloud.uploadFile({
-          cloudPath: `user_avatars/${Date.now()}-${Math.floor(Math.random() * 1000)}.png`,
-          filePath: this.data.tempAvatarPath,
+          cloudPath: `user_avatars/${Date.now()}-${Math.floor(Math.random() * 1000)}.jpg`,
+          filePath: this.data.avatarUrl
         });
         const fileID = uploadResult.fileID;
 
-        // 调用云函数进行登录/注册
-        const loginResult = await wx.cloud.callFunction({
+        // 2. 调用云函数更新用户信息
+        const updateResult = await wx.cloud.callFunction({
           name: 'userManage',
           data: {
-            action: 'login',
+            action: 'updateUserInfo',
             userData: {
               nickname: this.data.nickname,
-              avatarUrl: fileID // 使用云存储文件ID
+              avatarUrl: fileID,
+              isInfoComplete: true
             }
           }
         });
 
-        if (loginResult.result.success) {
-          wx.setStorageSync('userInfo', loginResult.result.user);
-          app.globalData.userInfo = loginResult.result.user;
+        if (updateResult.result.success) {
+          const updatedUserInfo = updateResult.result.user;
+          
+          // 保存更新后的用户信息
+          wx.setStorageSync('userInfo', updatedUserInfo);
+          
+          // 更新应用全局数据
+          const app = getApp();
+          app.globalData.userInfo = updatedUserInfo;
+          app.globalData.isLoggedIn = true;
+          app.globalData.needsUserInfo = false;
+          
           this.hideDialog();
           
           wx.showToast({
@@ -93,12 +89,12 @@ Component({
           });
 
           // 触发登录成功事件
-          this.triggerEvent('loginsuccess');
+          this.triggerEvent('loginsuccess', { userInfo: updatedUserInfo });
         } else {
-          throw new Error(loginResult.result.message);
+          throw new Error(updateResult.result.message || '登录失败');
         }
       } catch (err) {
-        console.error('登录或上传失败', err);
+        console.error('登录失败:', err);
         wx.showToast({
           title: err.message || '登录失败，请重试',
           icon: 'none'
@@ -107,6 +103,21 @@ Component({
         wx.hideLoading();
         this.setData({ isSaving: false });
       }
+    },
+
+    // 隐藏对话框
+    hideDialog() {
+      this.setData({
+        avatarUrl: '',
+        nickname: '',
+        isSaving: false
+      });
+      this.triggerEvent('close');
+    },
+
+    // 阻止事件冒泡
+    preventBubble() {
+      // 阻止点击弹窗内容区域时关闭弹窗
     }
   }
 }); 

@@ -13,7 +13,8 @@ Page({
     isProcessing: false,  // 是否正在处理文件
     processingProgress: 0, // 处理进度
     showProgress: false,   // 是否显示进度条
-    isFormValid: false    // 表单是否有效
+    isFormValid: false,   // 表单是否有效
+    cloudGifFileID: ''    // 云端GIF文件ID（视频转GIF后保存）
   },
 
   onLoad() {
@@ -255,45 +256,56 @@ Page({
     wx.cloud.uploadFile({
       cloudPath: cloudPath,
       filePath: videoPath,
-      success: fileID => {
-        console.log('视频上传成功:', fileID);
+      success: (uploadRes) => {
+        console.log('视频上传成功:', uploadRes);
+        const fileID = uploadRes.fileID;
         
-        // 调用云函数进行转换
+        // 验证fileID格式
+        if (!fileID || !fileID.startsWith('cloud://')) {
+          throw new Error('上传返回的文件ID格式无效');
+        }
+        
+        // 调用云函数进行转换（使用优化参数提高处理速度）
         wx.cloud.callFunction({
           name: 'videoToGif',
           data: {
             fileID: fileID,
-            options: {
-              width: 200,
-              height: 200,
-              duration: 5,
-              fps: 10
-            }
+            width: 100,        // 极小尺寸，极速处理
+            height: 0,         // 保持宽高比
+            duration: 2,       // 最短时长2秒
+            fps: 3             // 最低帧率3fps
           }
         })
         .then(res => {
-          console.log('GIF转换成功:', res);
+          console.log('云函数返回结果:', res);
           
-          // 获取GIF文件ID
-          const gifFileID = res.result && res.result.fileID;
+          if (!res.result || !res.result.success) {
+            throw new Error(res.result?.message || '视频处理失败');
+          }
+          
+          const gifFileID = res.result.fileID;
           if (!gifFileID) {
             throw new Error('未获取到GIF文件ID');
           }
           
-          // 下载GIF到本地临时文件
+          // 下载GIF到本地临时文件，同时传递gifFileID
           return wx.cloud.downloadFile({
             fileID: gifFileID
-          });
+          }).then(downloadRes => ({
+            gifFilePath: downloadRes.tempFilePath,
+            gifFileID: gifFileID
+          }));
         })
-        .then(res => {
-          const gifFilePath = res.tempFilePath;
+        .then(result => {
+          const { gifFilePath, gifFileID } = result;
           
           // 清除进度更新定时器
           clearInterval(this.updateProgressInterval);
           
-          // 更新头像
+          // 更新头像 - 同时保存本地路径和云端ID
           this.setData({
-            avatar: gifFilePath,
+            avatar: gifFilePath,           // 本地临时文件用于预览
+            cloudGifFileID: gifFileID,     // 云端GIF文件ID用于提交
             previewImage: gifFilePath,
             previewConfirmed: true,
             isProcessing: false,
@@ -312,18 +324,18 @@ Page({
         })
         .catch(err => {
           console.error('处理失败:', err);
-          this.handleProcessingError();
+          this.handleProcessingError(err);
         });
       },
       fail: err => {
         console.error('视频上传失败:', err);
-        this.handleProcessingError();
+        this.handleProcessingError(err);
       }
     });
   },
 
   // 处理视频处理错误
-  handleProcessingError() {
+  handleProcessingError(error) {
     // 清除进度更新定时器
     clearInterval(this.updateProgressInterval);
     
@@ -335,9 +347,41 @@ Page({
     });
     
     wx.hideLoading();
-    wx.showToast({
-      title: '处理失败，请重试',
-      icon: 'none'
+    
+    let errorMessage = '视频处理失败';
+    
+    if (error && error.message) {
+      if (error.message.includes('download') || error.message.includes('DOWNLOAD_FAILED')) {
+        errorMessage = '视频文件下载失败，请重试';
+      } else if (error.message.includes('ffmpeg') || error.message.includes('PROCESSING_FAILED')) {
+        errorMessage = '视频处理失败，请选择其他视频';
+      } else if (error.message.includes('upload') || error.message.includes('UPLOAD_FAILED')) {
+        errorMessage = '文件上传失败，请检查网络';
+      } else if (error.message.includes('INVALID_FILE_ID_FORMAT')) {
+        errorMessage = '文件格式错误，请重新选择';
+      } else if (error.message.includes('FFMPEG_NOT_FOUND')) {
+        errorMessage = 'FFmpeg服务不可用，请联系管理员检查层配置';
+      } else if (error.message.includes('FFmpeg')) {
+        errorMessage = 'FFmpeg处理失败：' + error.message;
+      }
+    }
+    
+    // 如果是云函数返回的详细错误，显示更多信息
+    console.error('详细错误信息:', error);
+    
+    wx.showModal({
+      title: '处理失败',
+      content: errorMessage,
+      showCancel: false,
+      confirmText: '知道了'
+    });
+    
+    // 重置状态，允许用户重新选择
+    this.setData({
+      previewImage: '',
+      tempFilePath: '',
+      fileType: '',
+      previewConfirmed: false
     });
   },
 
@@ -393,9 +437,20 @@ Page({
       mask: true
     });
     
-    console.log('开始上传头像:', this.data.avatar);
+    console.log('开始处理头像上传:', {
+      avatar: this.data.avatar,
+      cloudGifFileID: this.data.cloudGifFileID,
+      fileType: this.data.fileType
+    });
     
-    // 上传头像到云存储
+    // 如果已经有云端GIF文件ID（视频转GIF的情况），直接使用
+    if (this.data.cloudGifFileID && this.data.fileType === 'video') {
+      console.log('使用已生成的GIF文件:', this.data.cloudGifFileID);
+      this.saveNominationData(this.data.cloudGifFileID, true);
+      return;
+    }
+    
+    // 否则上传头像到云存储（图片的情况）
     const avatarCloudPath = `avatars/${Date.now()}.${this.data.fileType === 'video' ? 'gif' : 'png'}`;
     
     wx.cloud.uploadFile({
@@ -404,57 +459,7 @@ Page({
       success: res => {
         const fileID = res.fileID;
         console.log('头像上传成功:', fileID);
-        
-        const currentUser = wx.getStorageSync('userInfo') || {};
-        // 保存数据到数据库
-        wx.cloud.callFunction({
-          name: 'nominationManage',
-          data: {
-            action: 'createNomination',
-            nominationData: {
-              name: this.data.nickname,
-              avatarUrl: fileID,
-              isGif: this.data.fileType === 'video',
-              votes: 0,
-              trend: 'stable',
-              hotLevel: 1,
-              creatorId: currentUser.id || 'current_user',
-              createdAt: wx.cloud.database().serverDate(),
-              _createTime: new Date().getTime()
-            }
-          }
-        })
-        .then(res => {
-          console.log('数据保存成功:', res);
-          
-          if (!res.result || !res.result.success) {
-            throw new Error(res.result ? res.result.message : '保存失败');
-          }
-          
-          // 刷新首页数据
-          getApp().refreshRankingData();
-          
-          wx.hideLoading();
-          wx.showToast({
-            title: '提交成功',
-            icon: 'success'
-          });
-          
-          // 延迟后返回首页
-          setTimeout(() => {
-            wx.reLaunch({
-              url: '/pages/index/index'
-            });
-          }, 1500);
-        })
-        .catch(err => {
-          console.error('保存数据失败:', err);
-          wx.hideLoading();
-          wx.showToast({
-            title: '保存失败: ' + (err.message || '未知错误'),
-            icon: 'none'
-          });
-        });
+        this.saveNominationData(fileID, this.data.fileType === 'video');
       },
       fail: err => {
         console.error('头像上传失败:', err);
@@ -464,6 +469,70 @@ Page({
           icon: 'none'
         });
       }
+    });
+  },
+
+  // 保存提名数据到数据库
+  saveNominationData(avatarFileID, isGif) {
+    const currentUser = wx.getStorageSync('userInfo') || {};
+    const app = getApp();
+    
+    // 调试信息：检查用户状态
+    console.log('用户登录状态调试:', {
+      isLoggedIn: app.globalData.isLoggedIn,
+      storageUserInfo: currentUser,
+      globalUserInfo: app.globalData.userInfo,
+      token: wx.getStorageSync('token')
+    });
+    
+    // 保存数据到数据库
+    wx.cloud.callFunction({
+      name: 'nominationManage',
+      data: {
+        action: 'createNomination',
+        nominationData: {
+          name: this.data.nickname,
+          avatarUrl: avatarFileID,
+          isGif: isGif,
+          votes: 0,
+          trend: 'stable',
+          hotLevel: 1,
+          creatorId: currentUser.id || 'current_user',
+          createdAt: wx.cloud.database().serverDate(),
+          _createTime: new Date().getTime()
+        }
+      }
+    })
+    .then(res => {
+      console.log('数据保存成功:', res);
+      
+      if (!res.result || !res.result.success) {
+        throw new Error(res.result ? res.result.message : '保存失败');
+      }
+      
+      // 刷新首页数据
+      getApp().refreshRankingData();
+      
+      wx.hideLoading();
+      wx.showToast({
+        title: '提交成功',
+        icon: 'success'
+      });
+      
+      // 延迟后返回首页
+      setTimeout(() => {
+        wx.reLaunch({
+          url: '/pages/index/index'
+        });
+      }, 1500);
+    })
+    .catch(err => {
+      console.error('保存数据失败:', err);
+      wx.hideLoading();
+      wx.showToast({
+        title: '保存失败: ' + (err.message || '未知错误'),
+        icon: 'none'
+      });
     });
   },
 

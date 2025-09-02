@@ -2,11 +2,11 @@
   <!-- 个人信息卡片 -->
   <view class="profile-card card p-16">
     <view class="profile-avatar-container">
-      <image class="profile-avatar" src="{{entryDetail.avatar}}" mode="aspectFill" lazy-load="true"></image>
-      <view class="rank-tag">#{{entryDetail.rank}}</view>
+      <image class="profile-avatar" src="{{entryInfo.avatarUrl}}" mode="aspectFill" lazy-load="true"></image>
+      <view class="rank-tag">#{{entryInfo.rank}}</view>
     </view>
     
-    <text class="profile-name h2">{{entryDetail.name}}</text>
+    <text class="profile-name h2">{{entryInfo.name}}</text>
     <text class="profile-title text-body">伦敦得吃王者</text>
     
     <view class="badge-row flex justify-center gap-12 my-16">
@@ -15,7 +15,7 @@
     </view>
     
     <view class="points-display flex justify-center items-center">
-      <text class="points-number">{{userInfo.votes}}</text>
+      <text class="points-number">{{entryInfo.votes}}</text>
       <text class="points-label text-body">人想吃</text>
     </view>
   </view>
@@ -31,8 +31,8 @@
       <text class="btn-text">拒吃</text>
     </button>
     <button class="action-btn btn btn-secondary" open-type="share">
-      <text class="btn-icon">↗</text>
-      <text class="btn-text">分享</text>
+      <text class="btn-icon">👆</text>
+      <text class="btn-text">给朋友吃</text>
     </button>
   </view>
 
@@ -44,7 +44,7 @@
         <!-- 初始状态：录制投票音效按钮 -->
         <button wx:if="{{recordingState === 'idle'}}" 
                 class="sound-btn btn btn-accent-purple" 
-                bindtap="playSound">
+                bindtap="playSound" style="width: 356rpx; display: flex; box-sizing: border-box; left: -4rpx; top: 0rpx; position: relative">
           <text class="btn-icon">🎤</text>
           <text class="btn-text">录制投票音效</text>
         </button>
@@ -66,11 +66,11 @@
         <!-- 录制完成状态：预览音效按钮 -->
         <view wx:if="{{recordingState === 'recorded'}}" class="preview-sound-container">
           <button class="preview-sound-btn btn btn-accent-blue" bindtap="previewRecordedSound">
-            <text class="btn-icon">🔊</text>
-            <text class="btn-text">预览音效 ({{formattedTempDuration}}s)</text>
-          </button>
-          <button class="delete-sound-btn" bindtap="deleteRecordedSound">
-            <text class="delete-icon">×</text>
+            <view class="preview-content">
+              <text class="btn-icon">🔊</text>
+              <text class="btn-text">预览音效 ({{formattedTempDuration}}s)</text>
+            </view>
+            <text class="delete-icon" catchtap="deleteRecordedSound">🗑</text>
           </button>
         </view>
       </view>
@@ -129,14 +129,10 @@
     <view class="achievements-list">
       <view class="achievement-item {{item.type === 'success' ? 'success' : item.type === 'fail' ? 'fail' : 'neutral'}}" 
         wx:for="{{achievements}}" 
-        wx:key="id"
+        wx:key="_id"
       >
         <view class="achievement-content">
-          <text class="achievement-text text-body">{{item.content}}</text>
-          <view class="achievement-meta flex gap-8">
-            <text class="achievement-date text-small">{{item.date}}</text>
-            <text wx:if="{{item.location}}" class="achievement-location text-small">· {{item.location}}</text>
-          </view>
+          <text class="achievement-text text-body">{{item.creatorName || '匿名用户'}}：{{item.content}}</text>
         </view>
       </view>
       
@@ -159,7 +155,7 @@
       <view class="comment-input-wrapper">
         <input 
           class="comment-input input" 
-          placeholder="{{replyTo ? '回复 ' + replyTo : '添加评论...'}}"
+          placeholder="{{replyTo ? '回复 ' + replyTo.creatorName : '添加评论...'}}"
           value="{{commentContent}}"
           bindinput="onCommentInput"
           adjust-position="{{false}}"
@@ -272,8 +268,6 @@
   <!-- 弹窗 -->
   <view class="modal-overlay" wx:if="{{modalType !== ''}}" bindtap="closeModal">
     <view class="modal-content card" catchtap="stopPropagation">
-      <button class="modal-close-btn" bindtap="closeModal">✕</button>
-      
       <view class="modal-header">
         <text class="modal-title h2">{{modalTitle}}</text>
       </view>
@@ -300,5 +294,9 @@
   </view>
   
   <!-- 登录授权弹窗 -->
-  <auth-dialog id="authDialog"></auth-dialog>
+  <auth-dialog 
+    wx:if="{{showAuthDialog}}"
+    bind:loginsuccess="handleAuthSuccess"
+    bind:logincancel="handleAuthCancel"
+  ></auth-dialog>
 </view>

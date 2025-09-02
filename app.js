@@ -82,8 +82,9 @@ App({
     // 清除可能导致问题的缓存
     this.clearProblemCache();
     
-    // 执行无感登录
-    this.performSilentLogin();
+    // 新的登录策略：每次进入小程序都是未登录状态
+    // 用户需要主动点击用户中心或需要登录的功能时才触发登录
+    this.setInitialGuestState();
     
     // 检查每日投票限制重置
     this.checkDailyVoteLimitReset();
@@ -179,60 +180,111 @@ App({
     wx.setStorageSync("logs", logs)
   },
 
-  // 执行无感登录
-  performSilentLogin: function() {
-    console.log('开始无感登录...');
+  // 设置初始游客状态
+  setInitialGuestState: function() {
+    console.log('设置初始游客状态...');
     
-    wx.login({
-      success: (res) => {
-        if (res.code) {
-          console.log('获取到登录凭证:', res.code);
-          
-          // 调用登录云函数
-          wx.cloud.callFunction({
-            name: 'login',
-            data: {
-              code: res.code,
-              deviceInfo: this.getDeviceInfo()
-            }
-          }).then(loginRes => {
-            console.log('无感登录结果:', loginRes);
+    // 彻底清除所有可能的登录相关缓存
+    try {
+      wx.removeStorageSync('token');
+      wx.removeStorageSync('userInfo');
+      wx.removeStorageSync('openid');
+      wx.removeStorageSync('sessionKey');
+      console.log('已清除所有登录相关缓存');
+    } catch (e) {
+      console.error('清除缓存失败:', e);
+    }
+    
+    // 强制设置全局游客状态
+    this.globalData.userInfo = null;
+    this.globalData.token = null;
+    this.globalData.isLoggedIn = false;
+    this.globalData.needsUserInfo = false;
+    this.globalData.openid = null;
+    
+    // 输出状态确认
+    console.log('游客状态设置完成:', {
+      isLoggedIn: this.globalData.isLoggedIn,
+      userInfo: this.globalData.userInfo,
+      token: this.globalData.token
+    });
+    
+    // 加载排行榜数据（游客也可以查看）
+    this.refreshRankingData().catch(err => {
+      console.error('游客模式加载排行榜数据失败:', err);
+    });
+  },
+
+  // 触发登录流程（被用户点击事件调用）
+  triggerLogin: function() {
+    console.log('触发登录流程...');
+    
+    return new Promise((resolve, reject) => {
+      // 先获取微信登录凭证
+      wx.login({
+        success: (res) => {
+          if (res.code) {
+            console.log('获取到登录凭证:', res.code);
             
-            if (loginRes.result && loginRes.result.success) {
-              const { token, userInfo } = loginRes.result.data;
+            // 调用登录云函数获取用户基础信息
+            wx.cloud.callFunction({
+              name: 'login',
+              data: {
+                code: res.code,
+                deviceInfo: this.getDeviceInfo()
+              }
+            }).then(loginRes => {
+              console.log('登录云函数结果:', loginRes);
               
-              // 保存token和用户信息
-              wx.setStorageSync('token', token);
-              wx.setStorageSync('userInfo', userInfo);
-              
-              // 更新全局状态
-              this.globalData.userInfo = userInfo;
-              this.globalData.token = token;
-              this.globalData.isLoggedIn = true;
-              
-              console.log('无感登录成功');
-              
-              // 加载排行榜数据
-              this.refreshRankingData().catch(err => {
-                console.error('加载排行榜数据失败:', err);
-              });
-            } else {
-              console.error('无感登录失败:', loginRes.result?.message);
-              this.handleLoginFailure();
-            }
-          }).catch(err => {
-            console.error('调用登录云函数失败:', err);
-            this.handleLoginFailure();
-          });
-        } else {
-          console.error('获取登录凭证失败:', res.errMsg);
-          this.handleLoginFailure();
+              if (loginRes.result && loginRes.result.success) {
+                const { token, userInfo } = loginRes.result.data;
+                
+                // 保存token
+                wx.setStorageSync('token', token);
+                this.globalData.token = token;
+                
+                // 检查用户信息是否完整
+                const isInfoComplete = userInfo && 
+                                     userInfo.nickname && 
+                                     userInfo.nickname.trim() !== '' &&
+                                     userInfo.avatarUrl && 
+                                     userInfo.avatarUrl.trim() !== '' &&
+                                     userInfo.isInfoComplete !== false;
+                
+                if (isInfoComplete) {
+                  // 用户信息完整，直接登录成功
+                  wx.setStorageSync('userInfo', userInfo);
+                  this.globalData.userInfo = userInfo;
+                  this.globalData.isLoggedIn = true;
+                  
+                  console.log('登录成功，用户信息完整');
+                  resolve({ success: true, userInfo });
+                } else {
+                  // 用户信息不完整，需要显示授权弹窗
+                  console.log('登录成功，但需要完善用户信息');
+                  this.globalData.userInfo = userInfo;
+                  this.globalData.needsUserInfo = true;
+                  
+                  resolve({ success: true, needsUserInfo: true, userInfo });
+                }
+              } else {
+                console.error('登录失败:', loginRes.result?.message);
+                reject(new Error(loginRes.result?.message || '登录失败'));
+              }
+            }).catch(err => {
+              console.error('调用登录云函数失败:', err);
+              reject(err);
+            });
+          } else {
+            console.error('获取登录凭证失败:', res.errMsg);
+            reject(new Error('获取登录凭证失败'));
+          }
+        },
+        fail: (err) => {
+          console.error('wx.login失败:', err);
+          reject(err);
         }
-      },
-      fail: (err) => {
-        console.error('wx.login失败:', err);
-        this.handleLoginFailure();
-      }
+      });
     });
   },
 
@@ -248,10 +300,32 @@ App({
     this.globalData.userInfo = null;
     this.globalData.token = null;
     this.globalData.isLoggedIn = false;
+    this.globalData.needsUserInfo = false;
     
     // 仍然加载排行榜数据（游客也可以查看）
     this.refreshRankingData().catch(err => {
       console.error('游客模式加载排行榜数据失败:', err);
+    });
+  },
+  
+  // 用户退出登录
+  handleUserLogout: function() {
+    console.log('用户主动退出登录');
+    
+    // 清除所有登录相关数据
+    wx.removeStorageSync('token');
+    wx.removeStorageSync('userInfo');
+    
+    // 重置为游客状态
+    this.globalData.userInfo = null;
+    this.globalData.token = null;
+    this.globalData.isLoggedIn = false;
+    this.globalData.needsUserInfo = false;
+    
+    // 显示退出成功提示
+    wx.showToast({
+      title: '已退出登录',
+      icon: 'success'
     });
   },
 
@@ -545,12 +619,54 @@ App({
       });
     });
   },
+
+  // 全局测试方法 - 可以在控制台调用
+  testVideoGif: function() {
+    console.log('=== 全局视频转GIF测试 ===');
+    console.log('当前页面:', getCurrentPages());
+    
+    const pages = getCurrentPages();
+    if (pages.length > 0) {
+      const currentPage = pages[pages.length - 1];
+      console.log('当前页面路径:', currentPage.route);
+      console.log('页面data:', currentPage.data);
+      
+      // 检查页面是否有用户中心抽屉
+      if (currentPage.route === 'pages/index/index') {
+        console.log('在首页，检查用户中心抽屉组件...');
+        
+        // 尝试多种方式查找组件
+        const userDrawer1 = currentPage.selectComponent('#user-center-drawer');
+        const userDrawer2 = currentPage.selectComponent('.user-center-drawer');
+        const userDrawer3 = currentPage.selectComponent('user-center-drawer');
+        
+        console.log('查找结果:');
+        console.log('  #user-center-drawer:', !!userDrawer1);
+        console.log('  .user-center-drawer:', !!userDrawer2);
+        console.log('  user-center-drawer:', !!userDrawer3);
+        
+        if (userDrawer1 || userDrawer2 || userDrawer3) {
+          const drawer = userDrawer1 || userDrawer2 || userDrawer3;
+          console.log('找到用户中心抽屉组件，测试连通性...');
+          if (drawer.testEntryCard) {
+            drawer.testEntryCard();
+          } else {
+            console.log('抽屉组件没有testEntryCard方法');
+          }
+        } else {
+          console.log('所有方式都未找到用户中心抽屉组件');
+          console.log('提示：请先打开用户中心抽屉，然后重新运行测试');
+        }
+      }
+    }
+  },
   
   // 全局变量
   globalData: {
     userInfo: null,
     token: null,
     isLoggedIn: false,
+    needsUserInfo: false, // 标记是否需要收集用户信息
     shareSupport: {
       canShareTimeline: false,
       canShowShareMenu: false

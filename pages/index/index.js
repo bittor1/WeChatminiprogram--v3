@@ -9,6 +9,7 @@ Page({
     totalUsers: 0,
     voteGrowthRate: 0,
     showUserCenter: false,
+    showAuthDialog: false, // 控制授权对话框显示
     userInfo: null,
     isLoading: true,
     loadError: false,
@@ -18,21 +19,33 @@ Page({
       canShowShareMenu: false
     },
     isRefreshing: false, // 防止重复刷新
-    hasInitialized: false // 标记是否已初始化
+    hasInitialized: false, // 标记是否已初始化
+    _pendingAction: null // 待执行的操作
   },
 
   onLoad() {
     // 获取应用实例
     const app = getApp();
     
-    // 检查用户登录状态（基于无感登录的token）
-    if (app.globalData.isLoggedIn && app.globalData.userInfo) {
+    // 在新的登录策略下，只有确认已登录才显示用户信息
+    console.log('页面加载，检查登录状态:', {
+      isLoggedIn: app.globalData.isLoggedIn,
+      hasUserInfo: !!app.globalData.userInfo
+    });
+    
+    if (app.globalData.isLoggedIn && app.globalData.userInfo && app.globalData.userInfo.isInfoComplete) {
+      console.log('用户已登录且信息完整，显示用户信息');
       this.setData({ 
         userInfo: app.globalData.userInfo 
       });
+    } else {
+      console.log('用户未登录或信息不完整，保持游客状态');
+      this.setData({ 
+        userInfo: null 
+      });
     }
     
-    // 首次加载时强制刷新数据，而不是使用可能为空的缓存数据
+    // 首次加载时强制刷新数据
     this.refreshData();
     
     // 使用辅助函数启用分享菜单
@@ -197,16 +210,20 @@ Page({
   // 跳转到创建页
   goToCreate() {
     console.log('跳转到创建页');
-    wx.navigateTo({
-      url: '../create/create',
-      fail: (err) => {
-        console.error('跳转到创建页失败:', err);
-        wx.showToast({
-          title: '页面跳转失败',
-          icon: 'none'
-        });
-      }
-    });
+    
+    // 使用requireLogin确保用户已登录
+    this.requireLogin(() => {
+      wx.navigateTo({
+        url: '../create/create',
+        fail: (err) => {
+          console.error('跳转到创建页失败:', err);
+          wx.showToast({
+            title: '页面跳转失败',
+            icon: 'none'
+          });
+        }
+      });
+    }, '提名功能');
   },
   
   // 跳转到添加页
@@ -274,110 +291,95 @@ Page({
     };
 
     // 检查是否已登录
-    if (app.checkUserLogin()) {
+    if (app.globalData.isLoggedIn) {
       // 如果已登录，直接打开抽屉
       openDrawerAction();
     } else {
-      // 直接调用getUserProfile，因为这里仍在用户点击事件的直接回调中
-      wx.getUserProfile({
-        desc: '用于完善用户资料',
-        success: (profileRes) => {
-          console.log('获取用户信息成功:', profileRes);
-          
-          // 显示加载提示
-          wx.showLoading({
-            title: '登录中...',
-            mask: true
+      // 未登录，触发新的登录流程
+      this.triggerLoginForUserCenter(openDrawerAction);
+    }
+  },
+
+  // 为用户中心触发登录流程
+  async triggerLoginForUserCenter(openDrawerAction) {
+    try {
+      wx.showLoading({ title: '登录中...', mask: true });
+      
+      const app = getApp();
+      const loginResult = await app.triggerLogin();
+      wx.hideLoading();
+      
+      if (loginResult.success) {
+        if (loginResult.needsUserInfo) {
+          // 需要完善用户信息，显示授权弹窗
+          this.setData({ 
+            showAuthDialog: true,
+            _pendingAction: openDrawerAction // 保存待执行的操作
           });
-          
-          // 调用微信登录获取code
-          wx.login({
-            success: (loginRes) => {
-              if (loginRes.code) {
-                console.log('获取登录code成功:', loginRes.code);
-                
-                // 调用云函数进行登录
-                wx.cloud.callFunction({
-                  name: 'login',
-                  data: {
-                    code: loginRes.code
-                  },
-                  success: (res) => {
-                    console.log('云函数登录成功:', res);
-                    
-                    if (res.result && res.result.code === 200) {
-                      // 将用户信息保存到云数据库
-                      this.saveUserInfo(res.result.openid, profileRes.userInfo, openDrawerAction);
-                    } else {
-                      wx.hideLoading();
-                      wx.showToast({
-                        title: '登录失败',
-                        icon: 'none'
-                      });
-                    }
-                  },
-                  fail: (err) => {
-                    console.error('云函数登录失败:', err);
-                    wx.hideLoading();
-                    wx.showToast({
-                      title: '登录失败',
-                      icon: 'none'
-                    });
-                  }
-                });
-              } else {
-                console.error('获取登录code失败:', loginRes);
-                wx.hideLoading();
-                wx.showToast({
-                  title: '登录失败',
-                  icon: 'none'
-                });
-              }
-            },
-            fail: (err) => {
-              console.error('wx.login调用失败:', err);
-              wx.hideLoading();
-              wx.showToast({
-                title: '登录失败',
-                icon: 'none'
-              });
-            }
-          });
-        },
-        fail: (err) => {
-          console.error('获取用户信息失败:', err);
-          
-          // 用户拒绝授权，显示提示
-          wx.showToast({
-            title: '需要授权才能继续',
-            icon: 'none'
-          });
+        } else {
+          // 登录成功，用户信息完整，执行原本的操作
+          openDrawerAction();
         }
+      }
+    } catch (err) {
+      wx.hideLoading();
+      console.error('登录失败:', err);
+      wx.showToast({
+        title: '登录失败，请重试',
+        icon: 'none'
       });
     }
   },
   
-  // 获取用户个人信息
-  getUserProfile(openid, callback) {
-    wx.getUserProfile({
-      desc: '用于完善用户资料',
-      success: (profileRes) => {
-        console.log('获取用户信息成功:', profileRes);
-        
-        // 将用户信息保存到云数据库
-        this.saveUserInfo(openid, profileRes.userInfo, callback);
-      },
-      fail: (err) => {
-        console.error('获取用户信息失败:', err);
-        
-        // 即使获取用户信息失败，也可以使用默认信息创建用户
-        this.saveUserInfo(openid, {
-          nickName: '微信用户',
-          avatarUrl: '/images/placeholder-user.jpg',
-          gender: 0
-        }, callback);
+  // 通用的需要登录功能触发器
+  async requireLogin(action, actionName = '该功能') {
+    const app = getApp();
+    
+    if (app.globalData.isLoggedIn) {
+      // 已登录，直接执行操作
+      if (typeof action === 'function') {
+        action();
       }
-    });
+      return true;
+    } else {
+      // 未登录，触发登录流程
+      try {
+        wx.showLoading({ title: '登录中...', mask: true });
+        
+        const loginResult = await app.triggerLogin();
+        wx.hideLoading();
+        
+        if (loginResult.success) {
+          if (loginResult.needsUserInfo) {
+            // 需要完善用户信息，显示授权弹窗
+            this.setData({ 
+              showAuthDialog: true,
+              _pendingAction: action // 保存待执行的操作
+            });
+            
+            wx.showToast({
+              title: `请完善用户信息以使用${actionName}`,
+              icon: 'none',
+              duration: 2000
+            });
+          } else {
+            // 登录成功，用户信息完整，执行操作
+            if (typeof action === 'function') {
+              action();
+            }
+          }
+          return true;
+        }
+      } catch (err) {
+        wx.hideLoading();
+        console.error('登录失败:', err);
+        wx.showToast({
+          title: `需要登录才能使用${actionName}`,
+          icon: 'none'
+        });
+      }
+      return false;
+    }
   },
   
   // 保存用户信息到云数据库
@@ -456,8 +458,10 @@ Page({
           ...this.data.userInfo,
           id: updatedUserInfo._id,
           votes: updatedUserInfo.votes || 0,
-          name: updatedUserInfo.name || this.data.userInfo.name,
-          avatar: updatedUserInfo.avatar || this.data.userInfo.avatar
+          nickname: updatedUserInfo.nickname || this.data.userInfo.nickname,
+          name: updatedUserInfo.name || updatedUserInfo.nickname || this.data.userInfo.name,
+          avatar: updatedUserInfo.avatar || this.data.userInfo.avatar,
+          avatarUrl: updatedUserInfo.avatarUrl || this.data.userInfo.avatarUrl
         };
         
         // 更新数据
@@ -493,6 +497,49 @@ Page({
   handleUserInfoUpdate(e) {
     const userInfo = e.detail.userInfo;
     this.setData({ userInfo });
+  },
+  
+
+  
+  // 处理授权成功
+  handleAuthSuccess(e) {
+    console.log('授权登录成功:', e.detail);
+    const app = getApp();
+    
+    // 更新全局状态
+    app.globalData.isLoggedIn = true;
+    app.globalData.needsUserInfo = false;
+    
+    // 关闭授权对话框
+    this.setData({ showAuthDialog: false });
+    
+    // 刷新用户信息和页面数据
+    const userInfo = wx.getStorageSync('userInfo') || app.globalData.userInfo;
+    this.setData({ userInfo });
+    this.refreshData();
+    
+    // 如果有待执行的操作，执行它
+    if (this.data._pendingAction) {
+      this.data._pendingAction();
+      this.setData({ _pendingAction: null });
+    }
+    
+    wx.showToast({
+      title: '登录成功',
+      icon: 'success'
+    });
+  },
+  
+  // 处理授权取消
+  handleAuthCancel() {
+    console.log('用户取消授权');
+    this.setData({ showAuthDialog: false });
+    
+    // 用户取消授权，可以继续使用游客模式
+    wx.showToast({
+      title: '您可以先浏览内容',
+      icon: 'none'
+    });
   },
 
   // 下拉刷新

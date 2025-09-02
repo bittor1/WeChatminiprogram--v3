@@ -73,7 +73,7 @@ async function addComment(data, userId) {
     nominationId: data.nominationId,
     content: data.content,
     creatorId: userId,
-    creatorName: userInfo.name || '用户',
+    creatorName: userInfo.nickname || userInfo.name || '用户',
     creatorAvatar: userInfo.avatar || '/images/placeholder-user.jpg',
     _openid: userId, // 添加openid字段用于权限验证
     parentId: null,
@@ -140,7 +140,7 @@ async function replyComment(data, userId) {
       nominationId: data.nominationId,
       content: data.content,
       creatorId: userId,
-      creatorName: userInfo.name || '用户',
+      creatorName: userInfo.nickname || userInfo.name || '用户',
       creatorAvatar: userInfo.avatar || '/images/placeholder-user.jpg',
       _openid: userId, // 添加openid字段用于权限验证
       parentId: data.parentId,
@@ -448,10 +448,10 @@ async function createCommentNotification(nominationId, commenterId) {
           data: {
             receiverId: nomination.creatorId,
             senderId: commenterId,
-            senderName: commenter.name || '用户',
+            senderName: commenter.nickname || commenter.name || '用户',
             senderAvatar: commenter.avatar || '/images/placeholder-user.jpg',
             type: 'comment',
-            content: `${commenter.name || '用户'} 评论了你的提名`,
+            content: `${commenter.nickname || commenter.name || '用户'} 评论了你的提名`,
             nominationId: nominationId,
             nominationTitle: nomination.title || '提名'
           }
@@ -488,10 +488,10 @@ async function createReplyNotification(nominationId, replyerId, receiverId, comm
           data: {
             receiverId: receiverId,
             senderId: replyerId,
-            senderName: replier.name || '用户',
+            senderName: replier.nickname || replier.name || '用户',
             senderAvatar: replier.avatar || '/images/placeholder-user.jpg',
             type: 'reply',
-            content: `${replier.name || '用户'} 回复了你的评论`,
+            content: `${replier.nickname || replier.name || '用户'} 回复了你的评论`,
             relatedId: commentId,
             nominationId: nominationId,
             nominationTitle: nomination.title || '提名'

@@ -91,19 +91,39 @@
   border-bottom: 1px solid #F3F4F6;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between; /* 改为两端对齐 */
+  position: relative;
 }
 
 .sub-drawer-title {
   font-size: 18px;
   font-weight: 600;
   color: #1F2937;
+  flex: 1; /* 占据可用空间 */
+  text-align: center; /* 标题居中 */
+  white-space: nowrap; /* 防止换行 */
+  margin-right: 10px; /* 与按钮保持间距 */
 }
 
 .sub-drawer-content {
   flex: 1;
-  padding: 20px;
+  padding: 16px;
   overflow-y: auto;
+  box-sizing: border-box;
+}
+
+/* 骨架屏列表 */
+.skeleton-list {
+  padding: 0;
+}
+
+/* 提名列表 */
+.nominations-list {
+  height: 100%;
+  max-height: 70vh;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
 }
 
 /* 用户信息区域 */
@@ -412,4 +432,487 @@
 .cancel-btn {
   background-color: #f0f0f0;
   color: #333;
+}
+
+/* ==================== 新增功能样式 ==================== */
+
+/* 空状态按钮 */
+.empty-action-btn {
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 40rpx;
+  padding: 20rpx 40rpx;
+  font-size: 28rpx;
+  margin-top: 30rpx;
+}
+
+/* 加载状态样式 */
+.loading-state {
+  text-align: center;
+  padding: 60rpx 40rpx;
+  color: #999;
+}
+
+.loading-icon {
+  font-size: 48rpx;
+  display: block;
+  margin-bottom: 20rpx;
+}
+
+.loading-text {
+  font-size: 28rpx;
+  color: #666;
+}
+
+/* 子抽屉头部按钮 */
+.header-btn {
+  background: #f8f9fa;
+  color: #007bff;
+  border: 1px solid #007bff;
+  border-radius: 30rpx;
+  padding: 8rpx 16rpx; /* 减小内边距让按钮更紧凑 */
+  font-size: 24rpx;
+  line-height: 1;
+  flex-shrink: 0; /* 防止按钮被压缩 */
+  min-width: auto; /* 移除默认最小宽度 */
+  white-space: nowrap; /* 防止按钮文字换行 */
+}
+
+/* ==================== 提名列表样式 ==================== */
+.nominations-list {
+  padding: 20rpx;
+}
+
+/* 原提名相关样式已被新的 entry-card 组件替代，此处保留空间供其他样式 */
+
+/* ==================== 消息列表样式 ==================== */
+.message-tabs {
+  display: flex;
+  background: #f8f9fa;
+  border-radius: 12rpx;
+  margin: 20rpx;
+  padding: 8rpx;
+}
+
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 16rpx 8rpx;
+  border-radius: 8rpx;
+  font-size: 26rpx;
+  color: #666;
+  position: relative;
+  transition: all 0.3s;
+}
+
+.tab.active {
+  background: white;
+  color: #007bff;
+  box-shadow: 0 2rpx 4rpx rgba(0,0,0,0.1);
+}
+
+.tab-badge {
+  position: absolute;
+  top: 8rpx;
+  right: 8rpx;
+  background: #ff4757;
+  color: white;
+  font-size: 18rpx;
+  border-radius: 10rpx;
+  min-width: 20rpx;
+  height: 20rpx;
+  line-height: 20rpx;
+  text-align: center;
+  padding: 0 6rpx;
+}
+
+.messages-list {
+  padding: 20rpx;
+}
+
+.message-item {
+  background: white;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+  display: flex;
+  align-items: flex-start;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.1);
+}
+
+.message-item.unread {
+  border-left: 4rpx solid #007bff;
+  background: #f8f9ff;
+}
+
+.message-avatar {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 50%;
+  margin-right: 20rpx;
+  overflow: hidden;
+}
+
+.message-avatar image {
+  width: 100%;
+  height: 100%;
+}
+
+.message-content {
+  flex: 1;
+  margin-right: 20rpx;
+}
+
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+
+.message-from {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.message-time {
+  font-size: 22rpx;
+  color: #999;
+}
+
+.message-text {
+  font-size: 28rpx;
+  color: #666;
+  line-height: 1.4;
+  display: block;
+  margin-bottom: 12rpx;
+}
+
+.message-related {
+  background: #f0f8ff;
+  border-radius: 8rpx;
+  padding: 12rpx;
+  font-size: 24rpx;
+}
+
+.related-label {
+  color: #666;
+}
+
+.related-name {
+  color: #007bff;
+  font-weight: 600;
+}
+
+.message-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+/* ==================== 音效设置样式增强 ==================== */
+.sound-settings {
+  padding: 20rpx;
+  background: white;
+  border-radius: 16rpx;
+  margin: 20rpx;
+}
+
+.setting-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #eee;
+}
+
+.setting-item:last-child {
+  border-bottom: none;
+}
+
+.setting-label {
+  font-size: 28rpx;
+  color: #333;
+}
+
+.setting-value {
+  font-size: 26rpx;
+  color: #666;
+}
+
+.setting-actions {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 20rpx;
+}
+
+.setting-btn {
+  flex: 1;
+  padding: 20rpx;
+  border-radius: 12rpx;
+  font-size: 26rpx;
+  border: 1rpx solid #ddd;
+  background: white;
+  color: #333;
+}
+
+.setting-btn.primary {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.setting-btn[disabled] {
+  background: #f5f5f5;
+  color: #ccc;
+  border-color: #eee;
+}
+
+/* 录音控制样式 */
+.recording-control {
+  background: #fff3cd;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin: 20rpx;
+}
+
+.recording-info {
+  text-align: center;
+  margin-bottom: 20rpx;
+}
+
+.recording-time {
+  font-size: 48rpx;
+  font-weight: 600;
+  color: #333;
+  display: block;
+}
+
+.recording-status {
+  font-size: 24rpx;
+  color: #666;
+  margin-top: 8rpx;
+}
+
+.recording-actions {
+  display: flex;
+  gap: 16rpx;
+}
+
+.control-btn {
+  flex: 1;
+  padding: 20rpx;
+  border-radius: 12rpx;
+  font-size: 26rpx;
+  border: none;
+}
+
+.stop-btn {
+  background: #dc3545;
+  color: white;
+}
+
+.play-btn {
+  background: #28a745;
+  color: white;
+}
+
+.save-btn {
+  background: #007bff;
+  color: white;
+}
+
+.cancel-btn {
+  background: #6c757d;
+  color: white;
+}
+
+/* 音效库样式 */
+.sounds-library {
+  margin: 20rpx;
+}
+
+.library-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24rpx;
+  background: #f8f9fa;
+  border-radius: 16rpx;
+  cursor: pointer;
+}
+
+.library-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.toggle-icon {
+  font-size: 24rpx;
+  color: #666;
+}
+
+.sounds-list {
+  margin-top: 16rpx;
+}
+
+.sound-items {
+  background: white;
+  border-radius: 16rpx;
+  overflow: hidden;
+}
+
+.sound-item {
+  display: flex;
+  align-items: center;
+  padding: 24rpx;
+  border-bottom: 1rpx solid #eee;
+}
+
+.sound-item:last-child {
+  border-bottom: none;
+}
+
+.sound-info {
+  flex: 1;
+  margin-right: 20rpx;
+}
+
+.sound-name {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+  display: block;
+  margin-bottom: 8rpx;
+}
+
+.sound-duration {
+  font-size: 24rpx;
+  color: #666;
+  display: inline-block;
+  margin-right: 20rpx;
+}
+
+.sound-date {
+  font-size: 22rpx;
+  color: #999;
+}
+
+.sound-actions {
+  display: flex;
+  gap: 8rpx;
+}
+
+/* 通用按钮样式 */
+.action-btn {
+  padding: 12rpx 20rpx;
+  border-radius: 8rpx;
+  font-size: 22rpx;
+  border: 1rpx solid #ddd;
+  background: white;
+  color: #333;
+  min-width: 80rpx;
+}
+
+.view-btn {
+  border-color: #007bff;
+  color: #007bff;
+}
+
+.edit-btn {
+  border-color: #28a745;
+  color: #28a745;
+}
+
+.delete-btn {
+  border-color: #dc3545;
+  color: #dc3545;
+}
+
+.reply-btn {
+  border-color: #007bff;
+  color: #007bff;
+}
+
+.preview-btn {
+  border-color: #17a2b8;
+  color: #17a2b8;
+}
+
+.apply-btn {
+  border-color: #28a745;
+  color: #28a745;
+  background: #28a745;
+  color: white;
+}
+
+/* 提示文本 */
+.tip {
+  text-align: center;
+  font-size: 24rpx;
+  color: #999;
+  padding: 20rpx;
+  margin: 20rpx;
+}
+
+/* 骨架屏样式 */
+.skeleton-list {
+  padding: 16px 0;
+}
+
+.skeleton-card {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 68px;
+  background: #FFFFFF;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  padding: 0 16px;
+}
+
+.skeleton-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  margin-right: 12px;
+}
+
+.skeleton-name {
+  flex: 1;
+  height: 20px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  max-width: 120px;
+}
+
+.skeleton-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.skeleton-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 } 

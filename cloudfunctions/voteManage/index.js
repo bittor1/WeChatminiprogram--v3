@@ -48,7 +48,7 @@ async function getUserVotes(openid, userId) {
     if (userId) {
       userQuery._id = userId
     } else {
-      userQuery.openid = openid
+              userQuery._openid = openid
     }
     
     const userRes = await db.collection('users').where(userQuery).get()
@@ -152,7 +152,7 @@ async function addFreeVote(openid, targetId) {
   try {
     // 获取用户信息
     const userRes = await db.collection('users').where({
-      openid: openid
+      _openid: openid
     }).get()
     
     if (!userRes.data || userRes.data.length === 0) {
@@ -238,7 +238,7 @@ async function removeFreeVote(openid, targetId) {
   try {
     // 获取用户信息
     const userRes = await db.collection('users').where({
-      openid: openid
+      _openid: openid
     }).get()
     
     if (!userRes.data || userRes.data.length === 0) {

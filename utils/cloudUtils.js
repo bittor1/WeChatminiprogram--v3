@@ -124,17 +124,46 @@ const fallbackVideoToGif = (fileID, options = {}) => {
 };
 
 /**
+ * 修复云存储URL格式
+ * @param {string} url 可能有问题的URL
+ * @returns {string} 修复后的URL
+ */
+const fixCloudStorageUrl = (url) => {
+  if (!url) return url;
+  
+  // 如果URL以 /pages/ 开头且包含 cloud://，提取正确的云存储URL
+  if (url.includes('/pages/') && url.includes('cloud://')) {
+    const cloudUrlMatch = url.match(/cloud:\/\/[^\/\s]+\/[^\s]*/);
+    if (cloudUrlMatch) {
+      console.log('修复云存储URL:', url, '->', cloudUrlMatch[0]);
+      return cloudUrlMatch[0];
+    }
+  }
+  
+  // 如果已经是正确的云存储URL，直接返回
+  if (url.startsWith('cloud://')) {
+    return url;
+  }
+  
+  return url;
+};
+
+/**
  * 从云存储下载文件
  * @param {string} fileID 云存储文件ID
  */
 const downloadFileFromCloud = (fileID) => {
   return new Promise((resolve, reject) => {
+    // 修复可能的URL格式问题
+    const fixedFileID = fixCloudStorageUrl(fileID);
+    
     wx.cloud.downloadFile({
-      fileID,
+      fileID: fixedFileID,
       success: res => {
         resolve(res.tempFilePath);
       },
       fail: err => {
+        console.error('下载文件失败:', err, '原始fileID:', fileID, '修复后:', fixedFileID);
         reject(err);
       }
     });
@@ -306,6 +335,7 @@ module.exports = {
   checkShareSupport,
   enableShareMenu,
   showShareSuccess,
+  fixCloudStorageUrl,
   // 测试函数
   testSystemInfo
 } 

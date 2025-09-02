@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FFmpeg层诊断</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { background: #f5f5f5; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .error { background: #ffe6e6; border-left: 4px solid #f44336; }
+        .success { background: #e6ffe6; border-left: 4px solid #4caf50; }
+        .warning { background: #fff3cd; border-left: 4px solid #ffc107; }
+        button { 
+            padding: 12px 24px; 
+            margin: 10px 5px; 
+            cursor: pointer; 
+            background: #007cba; 
+            color: white; 
+            border: none; 
+            border-radius: 4px; 
+        }
+        button:hover { background: #005a8b; }
+        pre { 
+            overflow-x: auto; 
+            background: #f8f9fa; 
+            padding: 10px; 
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .status { 
+            display: inline-block; 
+            padding: 2px 6px; 
+            border-radius: 3px; 
+            font-size: 11px; 
+            font-weight: bold;
+        }
+        .status.exists { background: #d4edda; color: #155724; }
+        .status.missing { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>🔍 FFmpeg层诊断工具</h1>
+    
+    <div class="result">
+        <h3>📋 操作步骤：</h3>
+        <ol>
+            <li><strong>上传云函数</strong>：确保 videoToGif 云函数已重新上传</li>
+            <li><strong>运行诊断</strong>：点击下方按钮检查FFmpeg层状态</li>
+            <li><strong>分析结果</strong>：查看详细的路径和权限信息</li>
+        </ol>
+    </div>
+    
+    <button onclick="runFFmpegDiagnostic()">🔍 运行FFmpeg层诊断</button>
+    <button onclick="testSimpleCall()">🧪 测试云函数调用</button>
+    <button onclick="clearResults()">🗑️ 清除结果</button>
+    
+    <div id="results"></div>
+
+    <script>
+        function showResult(title, content, type = 'success') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            
+            let formattedContent = content;
+            if (typeof content === 'object') {
+                formattedContent = JSON.stringify(content, null, 2);
+            }
+            
+            div.innerHTML = `
+                <h3>${title}</h3>
+                <pre>${formattedContent}</pre>
+            `;
+            results.appendChild(div);
+            div.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function formatDiagnosticResult(diagnostic) {
+            let output = '=== FFmpeg路径检查 ===\n';
+            
+            for (const [path, info] of Object.entries(diagnostic.paths)) {
+                if (info.exists) {
+                    output += `✅ ${path}\n`;
+                    output += `   - 文件大小: ${(info.size / 1024 / 1024).toFixed(1)}MB\n`;
+                    output += `   - 权限模式: ${info.mode}\n`;
+                    output += `   - 是否为文件: ${info.isFile}\n\n`;
+                } else {
+                    output += `❌ ${path} - 不存在\n\n`;
+                }
+            }
+            
+            output += '=== 目录结构 ===\n';
+            for (const [dir, contents] of Object.entries(diagnostic.directoryContents)) {
+                output += `📁 ${dir}:\n`;
+                if (Array.isArray(contents)) {
+                    contents.forEach(item => output += `   - ${item}\n`);
+                } else {
+                    output += `   ${contents}\n`;
+                }
+                output += '\n';
+            }
+            
+            output += '=== 环境变量 ===\n';
+            output += `PATH: ${diagnostic.environment.PATH}\n`;
+            output += `LD_LIBRARY_PATH: ${diagnostic.environment.LD_LIBRARY_PATH || '(未设置)'}\n`;
+            output += `HOME: ${diagnostic.environment.HOME}\n`;
+            
+            return output;
+        }
+
+        async function runFFmpegDiagnostic() {
+            try {
+                showResult('🔍 诊断开始', '正在检查FFmpeg层配置...', 'warning');
+                
+                const res = await wx.cloud.callFunction({
+                    name: 'videoToGif',
+                    data: { diagnose: true }
+                });
+
+                if (res.result && res.result.success && res.result.diagnostic) {
+                    const formatted = formatDiagnosticResult(res.result.diagnostic);
+                    showResult('✅ FFmpeg层诊断结果', formatted, 'success');
+                    
+                    // 检查是否找到FFmpeg
+                    const foundFFmpeg = Object.values(res.result.diagnostic.paths).some(info => info.exists);
+                    if (!foundFFmpeg) {
+                        showResult('⚠️ 问题分析', 
+                            '没有找到FFmpeg可执行文件！\n\n可能的原因：\n' +
+                            '1. FFmpeg层没有正确绑定到云函数\n' +
+                            '2. 层的目录结构不正确\n' +
+                            '3. FFmpeg文件权限问题\n\n' +
+                            '建议解决方案：\n' +
+                            '1. 检查云开发控制台中的层绑定\n' +
+                            '2. 重新上传FFmpeg层\n' +
+                            '3. 确保层内部结构为: bin/ffmpeg', 
+                            'error');
+                    }
+                } else {
+                    showResult('❌ 诊断失败', res.result || res, 'error');
+                }
+            } catch (error) {
+                showResult('❌ 诊断错误', 
+                    `错误信息: ${error.message}\n\n这可能表示：\n` +
+                    '1. 云函数没有正确部署\n' +
+                    '2. 云函数执行权限问题\n' +
+                    '3. 网络连接问题', 'error');
+            }
+        }
+
+        async function testSimpleCall() {
+            try {
+                showResult('🧪 测试开始', '测试云函数基本调用...', 'warning');
+                
+                const res = await wx.cloud.callFunction({
+                    name: 'videoToGif',
+                    data: { 
+                        fileID: 'test-file-id'  // 故意传入无效ID来测试云函数响应
+                    }
+                });
+
+                showResult('📋 云函数响应', res.result, 'success');
+            } catch (error) {
+                showResult('❌ 云函数调用失败', error.message || error, 'error');
+            }
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        // 检查环境
+        window.onload = function() {
+            if (typeof wx === 'undefined') {
+                showResult('❌ 环境错误', 
+                    '请在微信开发者工具中打开此页面！\n\n' +
+                    '步骤：\n' +
+                    '1. 在微信开发者工具中\n' +
+                    '2. 点击"预览" → "选择本地文件"\n' +
+                    '3. 选择此HTML文件', 'error');
+            } else {
+                showResult('✅ 环境检查', '微信开发环境已就绪，可以开始诊断', 'success');
+            }
+        };
+    </script>
+</body>
+</html>

@@ -64,7 +64,7 @@
       wx:key="id"
       bindtap="goToDetail"
       data-id="{{item.id}}"
-     style="position: relative; left: 1rpx; top: -58rpx">
+     style="position: relative; left: -1rpx; top: -60rpx">
       <!-- 排名标识 -->
       <view class="rank-indicator flex justify-center items-center">
         <view wx:if="{{item.rank === 1}}" class="rank-icon">👑</view>
@@ -129,5 +129,12 @@
     bind:logout="handleUserLogout"
     bind:login="handleUserLogin"
     bind:updateUserInfo="handleUserInfoUpdate"
+  />
+  
+  <!-- 授权登录对话框 -->
+  <auth-dialog
+    show="{{showAuthDialog}}"
+    bind:loginsuccess="handleAuthSuccess"
+    bind:close="handleAuthCancel"
   />
 </view>

@@ -1,5 +1,6 @@
 {
   "usingComponents": {
+    "auth-dialog": "/components/auth-dialog/auth-dialog"
   },
   "navigationBarTitleText": "得吃档案详情"
 }

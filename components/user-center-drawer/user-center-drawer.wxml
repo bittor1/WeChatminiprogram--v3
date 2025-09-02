@@ -14,7 +14,7 @@
           <image class="user-avatar" src="{{userInfo.avatarUrl || '/images/placeholder-user.jpg'}}" mode="aspectFill"></image>
         </view>
         <view class="user-details">
-          <text class="user-name">{{userInfo.name || '授权用户'}}</text>
+          <text class="user-name">{{userInfo.nickname || userInfo.name || '授权用户'}}</text>
           <text class="user-status">{{(userInfo.votes || 0) + ' 人想吃'}}</text>
         </view>
       </block>
@@ -109,12 +109,44 @@
 <view wx:if="{{activeSubDrawer === 'nominations'}}" class="sub-drawer {{subDrawerVisible ? 'visible' : ''}}" catchtap="stopPropagation">
   <view class="sub-drawer-header">
     <text class="sub-drawer-title">我的提名</text>
+    <button class="header-btn" catchtap="refreshNominations">刷新</button>
   </view>
   <view class="sub-drawer-content">
-    <!-- 提名内容 -->
-    <view class="empty-state">
+
+    <!-- 骨架屏加载状态 -->
+    <view wx:if="{{nominationsLoading}}" class="skeleton-list">
+      <view class="skeleton-card" wx:for="{{[1,2,3]}}" wx:key="*this">
+        <view class="skeleton-avatar"></view>
+        <view class="skeleton-name"></view>
+        <view class="skeleton-actions">
+          <view class="skeleton-btn"></view>
+          <view class="skeleton-btn"></view>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 提名列表 -->
+    <scroll-view 
+      wx:elif="{{nominations && nominations.length > 0}}" 
+      class="nominations-list"
+      scroll-y="{{true}}"
+      refresher-enabled="{{true}}"
+      refresher-triggered="{{nominationsRefreshing}}"
+      bindrefresherrefresh="onNominationsRefresh">
+      <entry-card 
+        wx:for="{{nominations}}" 
+        wx:key="_id"
+        entry="{{item}}"
+        bind:updated="onEntryUpdated"
+        bind:deleted="onEntryDeleted">
+      </entry-card>
+    </scroll-view>
+    
+    <!-- 空状态 -->
+    <view wx:else class="empty-state">
       <text class="empty-icon">🏆</text>
       <text class="empty-text">暂无提名记录</text>
+      <button class="empty-action-btn" catchtap="goToCreate">立即提名</button>
     </view>
   </view>
 </view>
@@ -123,10 +155,57 @@
 <view wx:if="{{activeSubDrawer === 'messages'}}" class="sub-drawer {{subDrawerVisible ? 'visible' : ''}}" catchtap="stopPropagation">
   <view class="sub-drawer-header">
     <text class="sub-drawer-title">我的消息</text>
+    <button class="header-btn" catchtap="markAllMessagesAsRead">全部已读</button>
   </view>
   <view class="sub-drawer-content">
-    <!-- 消息内容 -->
-    <view class="empty-state">
+    <!-- 消息分类标签 -->
+    <view class="message-tabs">
+      <view class="tab {{activeMessageTab === 'all' ? 'active' : ''}}" catchtap="switchMessageTab" data-tab="all">
+        全部
+        <view class="tab-badge" wx:if="{{messageCounts.all > 0}}">{{messageCounts.all}}</view>
+      </view>
+      <view class="tab {{activeMessageTab === 'comment' ? 'active' : ''}}" catchtap="switchMessageTab" data-tab="comment">
+        评论
+        <view class="tab-badge" wx:if="{{messageCounts.comment > 0}}">{{messageCounts.comment}}</view>
+      </view>
+      <view class="tab {{activeMessageTab === 'vote' ? 'active' : ''}}" catchtap="switchMessageTab" data-tab="vote">
+        投票
+        <view class="tab-badge" wx:if="{{messageCounts.vote > 0}}">{{messageCounts.vote}}</view>
+      </view>
+    </view>
+    
+    <!-- 加载状态 -->
+    <view wx:if="{{messagesLoading}}" class="loading-state">
+      <text class="loading-icon">⏳</text>
+      <text class="loading-text">加载中...</text>
+    </view>
+    
+    <!-- 消息列表 -->
+    <view wx:elif="{{messages.length > 0}}" class="messages-list">
+      <view class="message-item {{item.isRead ? '' : 'unread'}}" wx:for="{{messages}}" wx:key="_id">
+        <view class="message-avatar">
+          <image src="{{item.fromUserAvatar || '/images/placeholder-user.jpg'}}" mode="aspectFill"></image>
+        </view>
+        <view class="message-content">
+          <view class="message-header">
+            <text class="message-from">{{item.fromUserName || '匿名用户'}}</text>
+            <text class="message-time">{{item.formattedTime}}</text>
+          </view>
+          <text class="message-text">{{item.content}}</text>
+          <view wx:if="{{item.relatedNomination}}" class="message-related">
+            <text class="related-label">相关提名：</text>
+            <text class="related-name">{{item.relatedNomination.name}}</text>
+          </view>
+        </view>
+        <view class="message-actions">
+          <button class="action-btn reply-btn" catchtap="replyMessage" data-id="{{item._id}}">回复</button>
+          <button class="action-btn delete-btn" catchtap="deleteMessage" data-id="{{item._id}}">删除</button>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 空状态 -->
+    <view wx:else class="empty-state">
       <text class="empty-icon">💬</text>
       <text class="empty-text">暂无消息记录</text>
     </view>
@@ -137,23 +216,82 @@
 <view wx:if="{{activeSubDrawer === 'sounds'}}" class="sub-drawer {{subDrawerVisible ? 'visible' : ''}}" catchtap="stopPropagation">
   <view class="sub-drawer-header">
     <text class="sub-drawer-title">我的音效</text>
+    <button class="header-btn" catchtap="refreshSounds">刷新</button>
   </view>
   <view class="sub-drawer-content">
-    <!-- 音效内容 -->
+    <!-- 音效设置 -->
     <view class="sound-settings">
       <view class="setting-item">
         <text class="setting-label">启用投票音效</text>
-        <switch checked="{{false}}" />
+        <switch checked="{{soundEnabled}}" bindchange="toggleSoundEnabled" />
       </view>
       <view class="setting-item">
         <text class="setting-label">当前音效</text>
-        <text class="setting-value">未设置</text>
+        <text class="setting-value">{{currentSoundName || '未设置'}}</text>
       </view>
       <view class="setting-actions">
-        <button class="setting-btn" disabled="true">预览</button>
-        <button class="setting-btn primary">录制新的音效</button>
+        <button class="setting-btn" catchtap="previewCurrentSound" disabled="{{!currentSoundUrl}}">预览</button>
+        <button class="setting-btn primary" catchtap="startRecording" disabled="{{recordingState !== 'idle'}}">
+          {{recordingState === 'recording' ? '录音中...' : '录制新音效'}}
+        </button>
       </view>
     </view>
+    
+    <!-- 录音控制 -->
+    <view wx:if="{{recordingState !== 'idle'}}" class="recording-control">
+      <view class="recording-info">
+        <text class="recording-time">{{formattedRecordTime}}</text>
+        <text class="recording-status">{{recordingState === 'recording' ? '正在录音' : '录音完成'}}</text>
+      </view>
+      <view class="recording-actions">
+        <button wx:if="{{recordingState === 'recording'}}" class="control-btn stop-btn" catchtap="stopRecording">停止录音</button>
+        <block wx:elif="{{recordingState === 'recorded'}}">
+          <button class="control-btn play-btn" catchtap="playRecording">试听</button>
+          <button class="control-btn save-btn" catchtap="saveRecording">保存音效</button>
+          <button class="control-btn cancel-btn" catchtap="cancelRecording">重新录制</button>
+        </block>
+      </view>
+    </view>
+    
+    <!-- 音效库 -->
+    <view class="sounds-library">
+      <view class="library-header" catchtap="toggleSoundsLibrary">
+        <text class="library-title">我的音效库 ({{userSounds.length}})</text>
+        <text class="toggle-icon">{{showSoundsLibrary ? '▼' : '▶'}}</text>
+      </view>
+      
+      <view wx:if="{{showSoundsLibrary}}" class="sounds-list">
+        <!-- 加载状态 -->
+        <view wx:if="{{soundsLoading}}" class="loading-state">
+          <text class="loading-icon">⏳</text>
+          <text class="loading-text">加载中...</text>
+        </view>
+        
+        <!-- 音效列表 -->
+        <view wx:elif="{{userSounds.length > 0}}" class="sound-items">
+          <view class="sound-item" wx:for="{{userSounds}}" wx:key="_id">
+            <view class="sound-info">
+              <text class="sound-name">{{item.name || '投票音效'}}</text>
+              <text class="sound-duration">{{item.formattedDuration}}s</text>
+              <text class="sound-date">{{item.formattedCreateTime}}</text>
+            </view>
+            <view class="sound-actions">
+              <button class="action-btn preview-btn" catchtap="previewUserSound" data-sound-id="{{item._id}}" data-file-id="{{item.fileId}}">预览</button>
+              <button class="action-btn apply-btn" catchtap="applyUserSound" data-sound-id="{{item._id}}" data-file-id="{{item.fileId}}" data-name="{{item.name}}">使用</button>
+              <button class="action-btn delete-btn" catchtap="deleteUserSound" data-sound-id="{{item._id}}" data-name="{{item.name}}">删除</button>
+            </view>
+          </view>
+        </view>
+        
+        <!-- 空状态 -->
+        <view wx:else class="empty-state">
+          <text class="empty-icon">🔊</text>
+          <text class="empty-text">暂无音效，录制一个试试吧！</text>
+        </view>
+      </view>
+    </view>
+    
+    <view class="tip">提示：录制完成后，您可以试听并决定是否保存。</view>
   </view>
 </view>
 

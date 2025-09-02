@@ -1,4 +1,6 @@
 {
   "component": true,
-  "usingComponents": {}
+  "usingComponents": {
+    "entry-card": "/components/entry-card/entry-card"
+  }
 } 

@@ -2,6 +2,7 @@
   "navigationBarTitleText": "伦敦必吃榜",
   "enablePullDownRefresh": true,
   "usingComponents": {
-    "user-center-drawer": "/components/user-center-drawer/user-center-drawer"
+    "user-center-drawer": "/components/user-center-drawer/user-center-drawer",
+    "auth-dialog": "/components/auth-dialog/auth-dialog"
   }
 }

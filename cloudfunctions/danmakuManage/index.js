@@ -62,7 +62,7 @@ async function addDanmaku(openid, targetId, text, color) {
     
     // 添加弹幕记录
     const danmakuData = {
-      openid,
+      _openid: openid,
       targetId,
       text,
       color: color || '#ffffff', // 默认白色
@@ -168,7 +168,7 @@ async function getDanmakusByUser(openid) {
     // 获取用户发送的弹幕，按创建时间排序
     const danmakus = await danmakusCollection
       .where({
-        openid: openid
+        _openid: openid
       })
       .orderBy('createTime', 'desc')
       .get()

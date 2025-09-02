@@ -1,0 +1,42 @@
+<view class="entry-card" bindtap="{{isEditing ? '' : 'onCardTap'}}" data-id="{{entry._id}}">
+  <!-- 头像区域 -->
+  <view class="avatar-section">
+    <view wx:if="{{isEditing}}" class="avatar-edit" catchtap="onAvatarEditTap">
+      <image class="avatar" src="{{editAvatarUrl || entry.avatarUrl || '/images/placeholder-user.jpg'}}" mode="aspectFill" />
+      <view class="avatar-edit-overlay">
+        <text class="edit-icon">📷</text>
+      </view>
+    </view>
+    <image wx:else class="avatar" src="{{entry.avatarUrl || '/images/placeholder-user.jpg'}}" mode="aspectFill" />
+  </view>
+  
+  <!-- 信息区域 -->
+  <view class="info-section" catchtap="{{isEditing ? 'preventCardTap' : ''}}">
+    <input wx:if="{{isEditing}}" 
+           class="username-input" 
+           value="{{editName}}" 
+           placeholder="请输入姓名"
+           bindinput="onNameInput" />
+    <text wx:else class="username">{{entry.name || '未知用户'}}</text>
+  </view>
+  
+  <!-- 操作区域 -->
+  <view class="action-section" catchtap="preventCardTap">
+    <block wx:if="{{isEditing}}">
+      <view class="action-btn save-btn" catchtap="onSaveTap" data-id="{{entry._id}}">
+        <text class="icon">✅</text>
+      </view>
+      <view class="action-btn cancel-btn" catchtap="onCancelTap">
+        <text class="icon">❌</text>
+      </view>
+    </block>
+    <block wx:else>
+      <view class="action-btn edit-btn" catchtap="onEditTap" data-id="{{entry._id}}">
+        <text class="icon">✏️</text>
+      </view>
+      <view class="action-btn delete-btn" catchtap="onDeleteTap" data-id="{{entry._id}}">
+        <text class="icon">🗑️</text>
+      </view>
+    </block>
+  </view>
+</view>

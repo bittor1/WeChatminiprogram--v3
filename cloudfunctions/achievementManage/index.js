@@ -106,7 +106,7 @@ async function addAchievement(userId, achievement, openid) {
     type: achievement.type || 'neutral',
     location: achievement.location || '伦敦',
     creatorId: openid,
-    creatorName: userInfo.name || '用户',
+    creatorName: userInfo.nickname || userInfo.name || '用户',
     creatorAvatar: userInfo.avatar || '/images/placeholder-user.jpg',
     createTime: db.serverDate(),
     updateTime: db.serverDate()
@@ -167,11 +167,34 @@ async function getAchievements(userId) {
       .orderBy('createTime', 'desc')
       .get();
     
-    console.log('[achievementManage] 获取事迹成功，数量:', achievementsResult.data.length, '数据:', JSON.stringify(achievementsResult.data));
+    // 获取用户信息来填充缺失的creatorName
+    let userInfo = null;
+    try {
+      const userResult = await db.collection('users').where({
+        _id: userId
+      }).get();
+      if (userResult.data.length > 0) {
+        userInfo = userResult.data[0];
+      }
+    } catch (error) {
+      console.error('[achievementManage] 获取用户信息失败:', error);
+    }
+    
+    // 确保每条事迹都有creatorName字段
+    const achievements = achievementsResult.data.map(achievement => {
+      if (!achievement.creatorName && userInfo) {
+        achievement.creatorName = userInfo.nickname || userInfo.name || '匿名用户';
+      } else if (!achievement.creatorName) {
+        achievement.creatorName = '匿名用户';
+      }
+      return achievement;
+    });
+    
+    console.log('[achievementManage] 获取事迹成功，数量:', achievements.length, '数据:', JSON.stringify(achievements));
     
     return {
       success: true,
-      achievements: achievementsResult.data
+      achievements: achievements
     };
   } catch (error) {
     console.error('[achievementManage] 获取事迹列表失败:', error);

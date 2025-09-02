@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FFmpeg层诊断测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .error { background: #ffe6e6; }
+        .success { background: #e6ffe6; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>FFmpeg层诊断测试</h1>
+    
+    <button onclick="runDiagnosis()">运行FFmpeg层诊断</button>
+    <button onclick="testVideoConversion()">测试视频转换</button>
+    
+    <div id="results"></div>
+
+    <script>
+        // 注意：这个页面需要在微信开发者工具中使用，因为它依赖wx对象
+        
+        function showResult(title, content, isError = false) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = 'result ' + (isError ? 'error' : 'success');
+            div.innerHTML = `<h3>${title}</h3><pre>${JSON.stringify(content, null, 2)}</pre>`;
+            results.appendChild(div);
+        }
+
+        async function runDiagnosis() {
+            try {
+                showResult('诊断开始', '正在检查FFmpeg层配置...');
+                
+                // 调用诊断模式的云函数
+                const res = await wx.cloud.callFunction({
+                    name: 'videoToGif',
+                    data: {
+                        diagnose: true
+                    }
+                });
+
+                if (res.result && res.result.success) {
+                    showResult('FFmpeg层诊断结果', res.result.diagnostic);
+                } else {
+                    showResult('诊断失败', res.result || res, true);
+                }
+            } catch (error) {
+                showResult('诊断错误', error.message || error, true);
+            }
+        }
+
+        async function testVideoConversion() {
+            try {
+                showResult('转换测试开始', '使用测试参数调用云函数...');
+                
+                // 使用无效的fileID测试云函数响应
+                const res = await wx.cloud.callFunction({
+                    name: 'videoToGif',
+                    data: {
+                        fileID: 'cloud://test-file-id.mp4',
+                        width: 100,
+                        height: 100,
+                        duration: 1,
+                        fps: 5
+                    }
+                });
+
+                showResult('转换测试结果', res.result);
+            } catch (error) {
+                showResult('转换测试错误', error.message || error, true);
+            }
+        }
+
+        // 页面加载时检查wx对象
+        window.onload = function() {
+            if (typeof wx === 'undefined') {
+                showResult('环境错误', '请在微信开发者工具中打开此页面', true);
+            } else {
+                showResult('环境检查', '微信开发环境已就绪');
+            }
+        };
+    </script>
+</body>
+</html>
+

@@ -22,9 +22,7 @@
 }
 
 /* 音效功能区特殊处理，确保flex布局正确 */
-.sound-section {
-  /* 移除手动padding，使用p-16类 */
-}
+/* .sound-section 使用p-16类，无需额外样式 */
 
 /* 评论区单独处理，不受上面规则影响 */
 .comments-section {
@@ -34,6 +32,11 @@
   box-sizing: border-box;
   margin-bottom: 16px;
   overflow: visible !important; /* 覆盖.card的overflow: hidden */
+}
+
+/* 评论区的section-header下移16px */
+.comments-section .section-header {
+  margin-top: 16px;
 }
 
 /* 个人资料卡片 */
@@ -143,6 +146,15 @@
 .btn-primary {
   height: 72rpx !important;
   min-height: 72rpx !important;
+  background-color: #007AFF !important;
+  color: white !important;
+  opacity: 1 !important;
+}
+
+.btn-primary[disabled] {
+  background-color: #C7C7CC !important;
+  color: #8E8E93 !important;
+  opacity: 1 !important;
 }
 
 /* 确保所有按钮的图标和文本样式一致 */
@@ -157,6 +169,7 @@
   text-overflow: ellipsis;
   max-width: 100%;
   font-size: 14px;
+  letter-spacing: 1px;
 }
 
 /* 音效功能区样式 */
@@ -289,63 +302,67 @@
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 8px;
-  position: relative;
 }
 
 .preview-sound-btn {
-  flex: none;
+  flex: 1;
   height: 72rpx;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
+  justify-content: space-between;
+  padding: 0 16rpx;
+  position: relative;
 }
 
-.delete-sound-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #F3F4F6;
-  border: none;
+/* 预览内容区域 */
+.preview-content {
   display: flex;
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: background-color 0.2s ease;
-}
-
-.delete-sound-btn:active {
-  background: #E5E7EB;
+  gap: 8px;
+  pointer-events: none;
 }
 
 .delete-icon {
-  font-size: 18px;
-  color: #6B7280;
-  font-weight: bold;
+  font-size: 16px;
+  color: #FFFFFF;
+  font-weight: normal;
+  line-height: 1;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+}
+
+.delete-icon:active {
+  background-color: rgba(255, 255, 255, 0.2);
 }
 
 /* 录制中的操作按钮 */
 .recording-actions {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  flex-direction: row;
+  gap: 8px;
   width: 100%;
-  height: 100%;
+  height: 72rpx;
   /* 确保不影响父容器的flex布局 */
   flex: none;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
+  box-sizing: border-box;
 }
 
 .confirm-record-btn,
 .cancel-record-btn {
-  height: 32px;
-  font-size: 12px;
-  border-radius: 16px;
+  flex: 1;
+  height: 36px;
+  font-size: 11px;
+  border-radius: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
+  min-width: 50px;
+  padding: 0 8px;
+  white-space: nowrap;
 }
 
 .confirm-record-btn {
@@ -429,7 +446,7 @@
 }
 
 .comment-text-bg {
-  font-size: 28rpx;
+  font-size: 14px;
   color: #666;
   font-weight: 400;
 }
@@ -440,7 +457,7 @@
   padding: 0 16rpx;
   background-color: transparent;
   border-radius: 999px;
-  font-size: 28rpx;
+  font-size: 14px;
   z-index: 1;  /* 降低输入框层级，让指示器显示在上方 */
   position: relative;
   border: none;
@@ -491,7 +508,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 26rpx;
+  font-size: 14px;
   border-radius: 999px; /* 胶囊型设计 */
 }
 
@@ -525,6 +542,21 @@
 /* 成就项样式 */
 .achievement-item {
   border-radius: 16rpx;
+  margin-bottom: 8px !important; /* 减少战绩项之间的间距 */
+}
+
+/* 战绩内容样式 */
+.achievement-text {
+  line-height: 0.9 !important; /* 紧凑行距 - 60%效果 */
+  margin: 0 !important;
+  padding: 0 !important;
+  display: block !important;
+}
+
+/* 战绩内容容器 */
+.achievement-content {
+  padding: 8px !important; /* 减少内边距 */
+  margin: 0 !important;
 }
 
 .add-achievement-btn {
@@ -537,13 +569,11 @@
 .modal-btn {
   height: 72rpx !important;
   min-height: 72rpx !important;
+  width: 240rpx !important;
+  max-width: 240rpx !important;
 }
 
-.modal-close-btn {
-  height: 72rpx !important;
-  min-height: 72rpx !important;
-  width: 72rpx !important;
-}
+
 
 /* 移除重复的replies-container定义，使用下方完整定义 */
 
@@ -702,7 +732,7 @@
 
 /* 用户名 - 小字体加粗 */
 .comment-username {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: #576B95; /* 微信蓝 */
   margin-right: 4px;
@@ -710,7 +740,7 @@
 
 /* 评论内容 - 与用户名在同一行 */
 .comment-content {
-  font-size: 13px;
+  font-size: 14px;
   color: #1F2937;
   line-height: 1.4;
   display: inline;
@@ -734,7 +764,7 @@
 .action-item {
   display: inline-block;
   color: #576B95; /* 微信蓝 */
-  font-size: 11px;
+  font-size: 14px;
   margin-right: 12px;
   padding: 2px 0;
   background: none;
@@ -865,7 +895,7 @@
 .empty-comments {
   text-align: center;
   color: #999;
-  font-size: 28rpx;
+  font-size: 14px;
   padding: 60rpx 0;
 }
 

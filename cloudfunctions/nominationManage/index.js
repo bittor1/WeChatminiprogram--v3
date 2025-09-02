@@ -50,7 +50,7 @@ async function getUserNominations(openid, userId) {
     if (userId) {
       userQuery._id = userId
     } else {
-      userQuery.openid = openid
+      userQuery._openid = openid
     }
     
     const userRes = await db.collection('users').where(userQuery).get()
@@ -100,19 +100,32 @@ async function createNomination(openid, nominationData) {
   }
   
   try {
+    // 调试信息：检查openid和查询条件
+    console.log('createNomination 调试信息:', {
+      openid: openid,
+      queryCondition: { _openid: openid }
+    });
+    
     // 获取用户信息
     const userRes = await db.collection('users').where({
-      openid: openid
+      _openid: openid
     }).get()
     
+    // 调试信息：检查查询结果
+    console.log('用户查询结果:', {
+      dataLength: userRes.data ? userRes.data.length : 0,
+      userData: userRes.data
+    });
+    
     if (!userRes.data || userRes.data.length === 0) {
+      console.log('用户不存在，无法创建提名');
       return {
         success: false,
         message: '用户不存在'
       }
     }
     
-    const userId = userRes.data[0]._id
+    const userId = userRes.data[0]._id;
     
     // 构建提名数据
     const nomination = {
@@ -163,7 +176,7 @@ async function updateNomination(openid, nominationData) {
   try {
     // 获取用户信息
     const userRes = await db.collection('users').where({
-      openid: openid
+      _openid: openid
     }).get()
     
     if (!userRes.data || userRes.data.length === 0) {
@@ -236,7 +249,7 @@ async function deleteNomination(openid, nominationId) {
   try {
     // 获取用户信息
     const userRes = await db.collection('users').where({
-      openid: openid
+      _openid: openid
     }).get()
     
     if (!userRes.data || userRes.data.length === 0) {
@@ -310,7 +323,7 @@ async function addAchievement(openid, achievement) {
   try {
     // 获取当前用户信息
     const userRes = await db.collection('users').where({
-      openid: openid
+      _openid: openid
     }).get()
     
     if (!userRes.data || userRes.data.length === 0) {

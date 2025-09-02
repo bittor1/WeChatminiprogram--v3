@@ -117,7 +117,7 @@ async function updateSoundSettings(openid, settingData) {
   try {
     // 获取用户信息
     const userRes = await db.collection('users').where({
-      openid: openid
+      _openid: openid
     }).get()
     
     if (!userRes.data || userRes.data.length === 0) {
@@ -168,6 +168,30 @@ async function updateSoundSettings(openid, settingData) {
 }
 
 /**
+ * 确保数据库集合存在
+ */
+async function ensureCollectionsExist() {
+  try {
+    // 尝试访问各个集合，如果不存在会自动创建
+    const collections = ['users', 'userSounds', 'soundSettings', 'pageSoundBindings']
+    
+    for (const collectionName of collections) {
+      try {
+        await db.collection(collectionName).limit(1).get()
+      } catch (err) {
+        console.log(`集合 ${collectionName} 不存在，正在创建...`)
+        // 集合会在第一次写入时自动创建
+      }
+    }
+    
+    return true
+  } catch (err) {
+    console.error('确保集合存在失败:', err)
+    return false
+  }
+}
+
+/**
  * 保存用户录制的音效到音效库
  * @param {string} openid 用户的openid
  * @param {object} soundData 音效数据
@@ -181,15 +205,43 @@ async function saveUserSound(openid, soundData) {
   }
   
   try {
+    // 确保集合存在
+    await ensureCollectionsExist()
+    
     // 获取用户信息
     const userRes = await db.collection('users').where({
-      openid: openid
+      _openid: openid
     }).get()
     
     if (!userRes.data || userRes.data.length === 0) {
+      // 如果用户不存在，创建用户记录
+      console.log('用户不存在，正在创建用户记录...')
+      const createUserRes = await db.collection('users').add({
+        data: {
+          _openid: openid,
+          createTime: db.serverDate(),
+          updateTime: db.serverDate()
+        }
+      })
+      
+      const userId = createUserRes._id
+      
+      // 保存音效到用户音效库
+      const soundRes = await userSoundsCollection.add({
+        data: {
+          userId: userId,
+          fileId: soundData.fileId,
+          duration: soundData.duration || 0,
+          name: soundData.name || '投票音效',
+          createTime: db.serverDate(),
+          updateTime: db.serverDate()
+        }
+      })
+      
       return {
-        success: false,
-        message: '用户不存在'
+        success: true,
+        message: '音效保存成功',
+        soundId: soundRes._id
       }
     }
     
@@ -230,7 +282,7 @@ async function getUserSounds(openid) {
   try {
     // 获取用户信息
     const userRes = await db.collection('users').where({
-      openid: openid
+      _openid: openid
     }).get()
     
     if (!userRes.data || userRes.data.length === 0) {
@@ -277,7 +329,7 @@ async function deleteUserSound(openid, soundId) {
   try {
     // 获取用户信息
     const userRes = await db.collection('users').where({
-      openid: openid
+      _openid: openid
     }).get()
     
     if (!userRes.data || userRes.data.length === 0) {
@@ -333,9 +385,12 @@ async function bindPageSound(openid, pageId, soundId) {
   }
   
   try {
+    // 确保集合存在
+    await ensureCollectionsExist()
+    
     // 获取用户信息
     const userRes = await db.collection('users').where({
-      openid: openid
+      _openid: openid
     }).get()
     
     if (!userRes.data || userRes.data.length === 0) {

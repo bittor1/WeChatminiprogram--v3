@@ -240,6 +240,10 @@
   min-width: 0;
 }
 
+.user-name {
+  margin-top: 10rpx; /* 下移5px，约10rpx */
+}
+
 /* 标签样式补充 */
 .badge {
   height: 24px;

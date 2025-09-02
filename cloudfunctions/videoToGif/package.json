@@ -11,5 +11,9 @@
   "dependencies": {
     "fluent-ffmpeg": "^2.1.2",
     "wx-server-sdk": "^3.0.1"
+  },
+  "cloudbaseFunction": {
+    "timeout": 60000,
+    "memorySize": 512
   }
 }

@@ -14,6 +14,8 @@ exports.main = async (event, context) => {
   switch(event.action) {
     case 'saveUserInfo':
       return await saveUserInfo(db, event, openid);
+    case 'updateUserInfo':
+      return await updateUserInfo(db, event, openid);
     case 'getUserInfo':
       return await getUserInfo(db, openid);
     default:
@@ -72,8 +74,8 @@ async function saveUserInfo(db, event, openid) {
       // 用户不存在，创建新用户
       const newUser = {
         _openid: userOpenid,
-        nickname: userInfo.nickName || '微信用户',
-        avatarUrl: userInfo.avatarUrl || '/images/placeholder-user.jpg',
+        nickname: userInfo.nickName || '',
+        avatarUrl: userInfo.avatarUrl || '',
         gender: userInfo.gender || 0,
         votes: 0,
         nominationsCount: 0,
@@ -103,6 +105,70 @@ async function saveUserInfo(db, event, openid) {
     return {
       code: 500,
       msg: '保存用户信息失败',
+      error: err.message || err
+    };
+  }
+}
+
+/**
+ * 更新用户信息（用于授权后完善信息）
+ * @param {object} db 数据库实例
+ * @param {object} event 事件对象
+ * @param {string} openid 用户openid
+ */
+async function updateUserInfo(db, event, openid) {
+  try {
+    if (!openid) {
+      return {
+        success: false,
+        message: '用户未登录'
+      };
+    }
+    
+    const userData = event.userData || {};
+    
+    // 查询现有用户
+    const userResult = await db.collection('users').where({
+      _openid: openid
+    }).get();
+    
+    if (userResult.data && userResult.data.length > 0) {
+      const existingUser = userResult.data[0];
+      
+      // 更新用户信息
+      const updateData = {
+        nickname: userData.nickname || existingUser.nickname,
+        avatarUrl: userData.avatarUrl || existingUser.avatarUrl,
+        isInfoComplete: userData.isInfoComplete !== undefined ? userData.isInfoComplete : true,
+        lastUpdateTime: db.serverDate()
+      };
+      
+      await db.collection('users').doc(existingUser._id).update({
+        data: updateData
+      });
+      
+      // 返回更新后的用户信息
+      const updatedUserInfo = {
+        ...existingUser,
+        ...updateData
+      };
+      
+      return {
+        success: true,
+        message: '用户信息更新成功',
+        user: updatedUserInfo
+      };
+    } else {
+      return {
+        success: false,
+        message: '用户不存在'
+      };
+    }
+  } catch (err) {
+    console.error('更新用户信息失败:', err);
+    return {
+      success: false,
+      message: '更新用户信息失败',
       error: err.message || err
     };
   }

@@ -50,16 +50,17 @@ async function upsertUser(db, openid, token) {
       tokenExpiry: tokenExpiry
     };
   } else {
-    // 用户不存在，创建新用户
+    // 用户不存在，创建新用户（信息不完整，需要后续授权）
     const newUser = {
       _openid: openid,
-      nickname: '微信用户',
-      avatarUrl: '/images/placeholder-user.jpg',
+      nickname: '', // 空昵称，表示需要用户设置
+      avatarUrl: '', // 空头像，表示需要用户设置
       gender: 0,
       votes: 0,
       nominationsCount: 0,
       votesCount: 0,
       receivedVotesCount: 0,
+      isInfoComplete: false, // 添加标识，表示用户信息不完整
       token: token,
       tokenExpiry: tokenExpiry,
       createTime: db.serverDate(),

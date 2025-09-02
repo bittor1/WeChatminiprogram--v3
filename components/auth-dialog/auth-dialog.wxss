@@ -7,105 +7,144 @@
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.6);
   z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .dialog-container {
-  position: fixed;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
   width: 85vw;
-  max-width: 600rpx;
+  max-width: 400rpx;
+  aspect-ratio: 1; /* 设置为正方形 */
   background-color: #ffffff;
   border-radius: 24rpx;
-  z-index: 1001;
   overflow: hidden;
-  padding: 40rpx;
-  box-sizing: border-box;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-content {
+  flex: 1;
+  padding: 40rpx 40rpx; /* 减小上下padding */
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: space-evenly; /* 均匀分布 */
 }
 
-.dialog-title {
-  font-size: 38rpx;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 24rpx;
-}
-
-.dialog-content {
-  width: 100%;
-  font-size: 28rpx;
-  color: #666;
-  margin-bottom: 40rpx;
-}
-
-.auth-tip {
-  text-align: center;
-  margin-bottom: 40rpx;
-  color: #888;
-  font-size: 26rpx;
-}
-
+/* 第一行：头像 */
 .avatar-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 40rpx;
-}
-
-.avatar-wrapper {
   padding: 0;
   border: none;
   background: none;
-  width: 160rpx;
-  height: 160rpx;
-  border-radius: 50%;
-  overflow: hidden;
-  margin-bottom: 16rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx; /* 减小间距 */
 }
 
 .avatar-image {
-  width: 100%;
-  height: 100%;
+  width: 100rpx; /* 稍微缩小头像 */
+  height: 100rpx;
+  border-radius: 50%;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+  border: 4rpx solid #f0f0f0;
 }
 
 .avatar-tip {
-  font-size: 24rpx;
-  color: #aaa;
+  font-size: 24rpx; /* 基准字号 */
+  color: #999;
+  text-align: center;
 }
 
+/* 第二行：昵称 */
 .nickname-section {
   width: 100%;
-}
-
-.nickname-label {
-  font-size: 28rpx;
-  margin-bottom: 12rpx;
-  color: #333;
+  display: flex;
+  justify-content: center;
+  margin-top: 16rpx; /* 下移8px（5px+3px），约等于16rpx */
 }
 
 .nickname-input {
-  width: 100%;
-  background-color: #f7f7f7;
-  border-radius: 12rpx;
-  padding: 16rpx 24rpx;
+  width: 60%; /* 左右拉长一倍：30% * 2 = 60% */
+  min-width: 120rpx; /* 恢复原始最小宽度 */
+  height: 44rpx; /* 与确认登录按钮相同高度 */
+  background-color: #f8f9fa;
+  border: 2rpx solid #e9ecef;
+  border-radius: 22rpx; /* 与确认登录按钮相同圆角（胶囊设计） */
+  padding: 0 20rpx; /* 只保留左右padding，高度由height控制 */
   box-sizing: border-box;
-  font-size: 30rpx;
+  font-size: 24rpx; /* 与avatar-tip相同字号 */
+  text-align: center;
+  color: #333;
+  line-height: 44rpx; /* 与确认登录按钮相同行高 */
+  display: flex;
+  align-items: center; /* 使用flex确保垂直居中 */
+  justify-content: center; /* 水平居中 */
 }
 
-.dialog-footer {
-  width: 100%;
+/* 专门的placeholder样式类 */
+.nickname-placeholder {
+  color: #999;
+  font-size: 24rpx; /* 与主字号相同 */
+  text-align: center;
+  line-height: 44rpx; /* 与确认登录按钮相同行高 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.login-button {
+/* 兼容性样式 */
+.nickname-input::placeholder {
+  color: #999;
+  font-size: 24rpx; /* 与主字号相同 */
+}
+
+/* 输入框聚焦状态，确保样式一致 */
+.nickname-input:focus {
+  font-size: 24rpx !important;
+  line-height: 44rpx !important; /* 与确认登录按钮相同行高 */
+  text-align: center !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* 第三行：确认按钮 */
+.confirm-section {
   width: 100%;
-  background-color: #07c160;
+  display: flex;
+  justify-content: center;
+  margin-top: 20rpx; /* 下移10px，约等于20rpx */
+}
+
+.confirm-btn {
+  width: 45% !important; /* 缩短10px，从50%减到45% */
+  max-width: 45%; /* 额外确保不会超过45% */
+  height: 44rpx; /* 上下缩短到50%：88*0.5=44 */
+  background-color: #10b981;
   color: white;
-  border-radius: 12rpx;
-  font-size: 32rpx;
-  height: 90rpx;
-  line-height: 90rpx;
-} 
+  border: none;
+  border-radius: 22rpx; /* 圆角相应调整：44/2=22 */
+  font-size: 24rpx; /* 与avatar-tip相同字号 */
+  font-weight: 600;
+  box-shadow: 0 4rpx 16rpx rgba(16, 185, 129, 0.3);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  white-space: nowrap; /* 防止文字换行 */
+}
+
+.confirm-btn:disabled {
+  background-color: #d1d5db;
+  color: #9ca3af;
+  box-shadow: none;
+}
+
+.confirm-btn:not(:disabled):active {
+  transform: scale(0.98);
+  box-shadow: 0 2rpx 8rpx rgba(16, 185, 129, 0.4);
+}
