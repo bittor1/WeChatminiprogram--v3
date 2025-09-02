@@ -1129,13 +1129,30 @@ Page({
         console.log('点赞结果:', res);
         
         if (res.result && res.result.success) {
+          // 显示操作反馈
+          var message = res.result.action === 'liked' ? '点赞成功' : '取消点赞';
+          wx.showToast({
+            title: message,
+            icon: 'success',
+            duration: 1000
+          });
+          
           // 重新加载评论
           this.loadComments();
+        } else {
+          wx.showToast({
+            title: res.result.message || '操作失败',
+            icon: 'none'
+          });
         }
       }).catch(err => {
         console.error('点赞失败:', err);
+        wx.showToast({
+          title: '操作失败',
+          icon: 'none'
+        });
       });
-    }, '点赞评论');
+    }, '评论点赞');
   },
 
   // 显示更多回复

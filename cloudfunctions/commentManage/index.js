@@ -203,13 +203,14 @@ async function listComments(data) {
       })
       .count();
     
-    // 获取顶级评论
+    // 获取顶级评论，按点赞数降序排列
     const commentsResult = await db.collection('comments')
       .where({
         nominationId,
         parentId: null,
         status: 0
       })
+      .orderBy('likes', 'desc')
       .orderBy('createTime', 'desc')
       .skip(skip)
       .limit(pageSize)
@@ -397,27 +398,38 @@ async function likeComment(data, userId) {
       .get();
     
     if (likeRecord.data.length > 0) {
-      return { success: false, message: '已经点过赞了' };
+      // 已点赞，执行取消点赞
+      await db.collection('comment_likes').doc(likeRecord.data[0]._id).remove();
+      
+      // 减少评论点赞数
+      await db.collection('comments').doc(data.commentId).update({
+        data: {
+          likes: _.inc(-1),
+          updateTime: db.serverDate()
+        }
+      });
+      
+      return { success: true, action: 'unliked', message: '取消点赞成功' };
+    } else {
+      // 未点赞，执行点赞
+      await db.collection('comment_likes').add({
+        data: {
+          commentId: data.commentId,
+          userId,
+          createTime: db.serverDate()
+        }
+      });
+      
+      // 增加评论点赞数
+      await db.collection('comments').doc(data.commentId).update({
+        data: {
+          likes: _.inc(1),
+          updateTime: db.serverDate()
+        }
+      });
+      
+      return { success: true, action: 'liked', message: '点赞成功' };
     }
-    
-    // 添加点赞记录
-    await db.collection('comment_likes').add({
-      data: {
-        commentId: data.commentId,
-        userId,
-        createTime: db.serverDate()
-      }
-    });
-    
-    // 更新评论点赞数
-    await db.collection('comments').doc(data.commentId).update({
-      data: {
-        likes: _.inc(1),
-        updateTime: db.serverDate()
-      }
-    });
-    
-    return { success: true };
   } catch (error) {
     console.error('点赞评论失败:', error);
     return { success: false, message: '点赞评论失败', error: error.message };
@@ -453,7 +465,7 @@ async function createCommentNotification(nominationId, commenterId) {
             type: 'comment',
             content: `${commenter.nickname || commenter.name || '用户'} 评论了你的提名`,
             nominationId: nominationId,
-            nominationTitle: nomination.title || '提名'
+            nominationTitle: nomination.name || '提名'
           }
         }
       });
@@ -494,7 +506,7 @@ async function createReplyNotification(nominationId, replyerId, receiverId, comm
             content: `${replier.nickname || replier.name || '用户'} 回复了你的评论`,
             relatedId: commentId,
             nominationId: nominationId,
-            nominationTitle: nomination.title || '提名'
+            nominationTitle: nomination.name || '提名'
           }
         }
       });

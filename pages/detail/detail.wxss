@@ -55,8 +55,8 @@
 }
 
 .profile-avatar {
-  width: 96px;
-  height: 96px; /* 恢复原来的头像高度 */
+  width: 120px;
+  height: 120px; /* 增大25%: 96px × 1.25 = 120px */
   border-radius: 50%;
   background: #F3F4F6;
   object-fit: cover;
@@ -91,9 +91,9 @@
 .points-display {
   background: #F3F4F6;
   border-radius: 999px;
-  padding: 8px 16px;
+  padding: 0px 16px;
   gap: 8px;
-  margin-top: 8px;
+  margin-top: 0px;
 }
 
 .points-number {

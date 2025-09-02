@@ -182,19 +182,19 @@
     
     <!-- 消息列表 -->
     <view wx:elif="{{messages.length > 0}}" class="messages-list">
-      <view class="message-item {{item.isRead ? '' : 'unread'}}" wx:for="{{messages}}" wx:key="_id">
+      <view class="message-item {{item.read ? '' : 'unread'}}" wx:for="{{messages}}" wx:key="_id">
         <view class="message-avatar">
-          <image src="{{item.fromUserAvatar || '/images/placeholder-user.jpg'}}" mode="aspectFill"></image>
+          <image src="{{item.senderAvatar || '/images/placeholder-user.jpg'}}" mode="aspectFill"></image>
         </view>
         <view class="message-content">
           <view class="message-header">
-            <text class="message-from">{{item.fromUserName || '匿名用户'}}</text>
+            <text class="message-from">{{item.senderName || '匿名用户'}}</text>
             <text class="message-time">{{item.formattedTime}}</text>
           </view>
           <text class="message-text">{{item.content}}</text>
-          <view wx:if="{{item.relatedNomination}}" class="message-related">
+          <view wx:if="{{item.nominationTitle}}" class="message-related">
             <text class="related-label">相关提名：</text>
-            <text class="related-name">{{item.relatedNomination.name}}</text>
+            <text class="related-name">{{item.nominationTitle}}</text>
           </view>
         </view>
         <view class="message-actions">

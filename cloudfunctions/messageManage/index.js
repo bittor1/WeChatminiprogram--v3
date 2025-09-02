@@ -20,7 +20,7 @@ exports.main = async (event, context) => {
     case 'create':
       return await createMessage(data)
     case 'getUserMessages':
-      return await getUserMessages(OPENID, event.userId)
+      return await getUserMessages(OPENID, event.userId, event.messageType)
     case 'markAsRead':
       return await markAsRead(OPENID, event.messageId)
     case 'markAllAsRead':
@@ -40,6 +40,8 @@ exports.main = async (event, context) => {
  * @param {object} messageData 消息数据
  */
 async function createMessage(messageData) {
+  console.log('[messageManage] 创建消息请求:', messageData)
+  
   if (!messageData || !messageData.receiverId) {
     return {
       success: false,
@@ -56,10 +58,14 @@ async function createMessage(messageData) {
       _createTime: Date.now()
     }
     
+    console.log('[messageManage] 准备保存的消息数据:', message)
+    
     // 添加到数据库
     const result = await messagesCollection.add({
       data: message
     })
+    
+    console.log('[messageManage] 消息创建成功:', result._id)
     
     return {
       success: true,
@@ -82,15 +88,16 @@ async function createMessage(messageData) {
  * 获取用户消息列表
  * @param {string} openid 用户的openid
  * @param {string} userId 指定用户ID查询(可选)
+ * @param {string} messageType 消息类型过滤(可选)
  */
-async function getUserMessages(openid, userId) {
+async function getUserMessages(openid, userId, messageType) {
   try {
     // 查询用户信息，获取用户ID
     let userQuery = {}
     if (userId) {
       userQuery._id = userId
     } else {
-      userQuery.openid = openid
+      userQuery._openid = openid
     }
     
     const userRes = await db.collection('users').where(userQuery).get()
@@ -104,18 +111,41 @@ async function getUserMessages(openid, userId) {
     
     const user = userRes.data[0]
     
+    // 构建查询条件
+    let queryCondition = {
+      receiverId: user._id
+    }
+    
+    // 根据消息类型过滤
+    if (messageType && messageType !== 'all') {
+      queryCondition.type = messageType
+    }
+    
     // 获取用户的消息
     const messagesRes = await messagesCollection
-      .where({
-        receiverId: user._id
-      })
+      .where(queryCondition)
       .orderBy('createTime', 'desc')
       .get()
+    
+    // 如果是查询所有消息，则统计各类型的数量
+    let counts = { all: 0, comment: 0, vote: 0, system: 0 }
+    if (!messageType || messageType === 'all') {
+      const allMessagesRes = await messagesCollection
+        .where({ receiverId: user._id })
+        .get()
+      
+      const allMessages = allMessagesRes.data || []
+      counts.all = allMessages.length
+      counts.comment = allMessages.filter(msg => msg.type === 'comment').length
+      counts.vote = allMessages.filter(msg => msg.type === 'vote').length
+      counts.system = allMessages.filter(msg => msg.type === 'system').length
+    }
     
     return {
       success: true,
       data: messagesRes.data || [],
-      unreadCount: (messagesRes.data || []).filter(msg => !msg.read).length
+      unreadCount: (messagesRes.data || []).filter(msg => !msg.read).length,
+      counts: counts
     }
   } catch (err) {
     console.error('获取用户消息失败:', err)

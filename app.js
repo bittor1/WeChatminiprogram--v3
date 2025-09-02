@@ -405,6 +405,7 @@ App({
             votes: _.gte(0)
           })
           .orderBy('votes', 'desc')
+          .orderBy('_createTime', 'desc') // 票数相同时，新上榜的排在上面
           .limit(50) // 增加限制数量，确保能看到更多提名
           .get()
           .then(res => {
@@ -422,6 +423,7 @@ App({
                   trend: item.trend || 'stable',
                   hotLevel: item.hotLevel || 1,
                   isGif: item.isGif || false,
+                  createTime: item._createTime || item.createdAt || Date.now(), // 包含创建时间用于排序
                 };
               });
               

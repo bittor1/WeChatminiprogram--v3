@@ -392,7 +392,7 @@ async function createVoteNotification(nominationId, voterId) {
   try {
     // 获取提名信息和投票者信息
     const [nomination, voter] = await Promise.all([
-      db.collection('nominations').doc(nominationId).get(),
+      db.collection('entries').doc(nominationId).get(),
       db.collection('users').where({ _openid: voterId }).get()
     ]);
     
@@ -411,12 +411,12 @@ async function createVoteNotification(nominationId, voterId) {
           data: {
             receiverId: nominationData.creatorId,
             senderId: voterId,
-            senderName: voterData.name || '用户',
+            senderName: voterData.nickname || voterData.name || '用户',
             senderAvatar: voterData.avatar || '/images/placeholder-user.jpg',
             type: 'vote',
-            content: `${voterData.name || '用户'} 给你的提名投了一票`,
+            content: `${voterData.nickname || voterData.name || '用户'} 给你的提名投了一票`,
             nominationId: nominationId,
-            nominationTitle: nominationData.title || '提名'
+            nominationTitle: nominationData.name || '提名'
           }
         }
       });
