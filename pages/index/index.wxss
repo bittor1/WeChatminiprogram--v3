@@ -1,13 +1,18 @@
 /* pages/index/index.wxss */
-.container {
-  min-height: 100vh;
+.page-container {
+  height: 100vh;
   background: #F7F8FA;
+  display: flex;
+  flex-direction: column;
 }
 
-/* 头部区域 */
-.header-section {
-  padding-top: 20px; /* 恢复原来的顶部间距 */
-  position: relative; /* 为了绝对定位头像 */
+/* 固定头部区域 */
+.fixed-header {
+  flex-shrink: 0; /* 防止被压缩 */
+  padding-top: 20px;
+  position: relative;
+  background: #F7F8FA;
+  z-index: 10;
 }
 
 .title-container {
@@ -41,7 +46,7 @@
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.5);
   border: 3px solid #10B981;
-  z-index: 999; /* 非常高的z-index确保不被其他元素遮挡 */
+  z-index: 100; /* 用户头像按钮层级适中 */
   transition: transform 0.2s ease;
 }
 
@@ -82,7 +87,8 @@
 .stats-card {
   border-radius: 16px;
   padding: 20px;
-  margin-bottom: 16px; /* 添加底部间距，确保与下方内容有分隔 */
+  margin-bottom: 8px; /* 缩小50%: 16px → 8px */
+  margin-top: -10px; /* 上移10px */
 }
 
 /* 统计项目 */
@@ -113,6 +119,8 @@
   justify-content: center;
   padding: 60px 20px;
   text-align: center;
+  height: 100%;
+  min-height: 300px;
 }
 
 .loading-animation {
@@ -144,6 +152,8 @@
   justify-content: center;
   padding: 60px 20px;
   text-align: center;
+  height: 100%;
+  min-height: 300px;
 }
 
 .error-icon {
@@ -175,6 +185,8 @@
   justify-content: center;
   padding: 60px 20px;
   text-align: center;
+  height: 100%;
+  min-height: 300px;
 }
 
 .empty-icon {
@@ -204,16 +216,37 @@
   font-size: 16px;
 }
 
+/* 排行榜容器 */
+.ranking-container {
+  flex: 1; /* 占据剩余空间 */
+  overflow: hidden;
+  position: relative;
+  margin-top: -20px; /* 上移20px */
+  z-index: 50; /* 适中层级，低于遮罩但高于普通内容 */
+}
+
+/* 排行榜滚动视图 */
+.ranking-scroll-view {
+  height: 100%;
+  width: 100%;
+}
+
 /* 排行榜列表 */
 .ranking-list {
-  padding-top: 16px;
-  padding-bottom: 80px; /* 给浮动按钮留出空间 */
+  padding-top: 8px; /* 缩小50%: 16px → 8px */
+  padding-bottom: 120px; /* 给浮动按钮留出更多空间 */
 }
 
 .ranking-item {
   transition: transform 0.2s ease;
   border-radius: 16px;
   position: relative;
+  z-index: 51; /* 略高于排行榜容器 */
+}
+
+/* 排行榜卡片内的头像位置调整 */
+.ranking-item .avatar {
+  margin-left: -12px; /* 往左移动12px */
 }
 
 .ranking-item:active {
@@ -224,6 +257,7 @@
   width: 40px;
   height: 40px;
   margin-right: 12px;
+  margin-left: -2px; /* 往左移动2px */
 }
 
 .rank-icon {
@@ -322,7 +356,7 @@
   align-items: center;
   padding: 0 16px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  z-index: 100;
+  z-index: 60; /* 浮动按钮层级适中 */
   transition: all 0.2s ease;
 }
 

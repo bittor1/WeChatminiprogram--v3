@@ -132,7 +132,9 @@
         wx:key="_id"
       >
         <view class="achievement-content">
-          <text class="achievement-text text-body">{{item.creatorName || '匿名用户'}}：{{item.content}}</text>
+          <text class="achievement-username">{{item.creatorName || '匿名用户'}}</text>
+          <text class="achievement-separator">：</text>
+          <text class="achievement-text text-body">{{item.content}}</text>
         </view>
       </view>
       

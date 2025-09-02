@@ -545,12 +545,27 @@
   margin-bottom: 8px !important; /* 减少战绩项之间的间距 */
 }
 
+/* 战绩用户名样式 - 与用户中心保持一致 */
+.achievement-username {
+  font-size: 14px;
+  color: #1F2937;
+  font-weight: 600;
+  display: inline;
+}
+
+/* 战绩分隔符样式 */
+.achievement-separator {
+  font-size: 14px;
+  color: #1F2937;
+  display: inline;
+}
+
 /* 战绩内容样式 */
 .achievement-text {
-  line-height: 0.9 !important; /* 紧凑行距 - 60%效果 */
+  line-height: 1.7 !important; /* 增加行距10px效果 */
   margin: 0 !important;
   padding: 0 !important;
-  display: block !important;
+  display: inline !important; /* 改为inline，与用户名在同一行 */
 }
 
 /* 战绩内容容器 */

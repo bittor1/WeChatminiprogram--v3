@@ -305,6 +305,7 @@
       <text class="about-title">伦敦必吃榜</text>
       <text class="about-version">版本 1.0.0</text>
       <text class="about-desc">一个朋友圈娱乐互动的微信小程序，专为在伦敦的朋友们设计的社交娱乐排行榜。</text>
+      <text class="about-author">made by gouzi</text>
     </view>
   </view>
 </view> 

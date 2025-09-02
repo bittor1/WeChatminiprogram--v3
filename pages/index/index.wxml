@@ -1,12 +1,12 @@
-<view class="container">
+<view class="page-container">
   <!-- 独立的用户头像按钮 - 固定在右上角 -->
   <view class="top-right-avatar-fixed" catchtap="openUserCenter" data-test="user-center-avatar">
     <image wx:if="{{userInfo && userInfo.avatar}}" class="avatar-image" src="{{userInfo.avatar}}" mode="aspectFill"></image>
     <view wx:else class="avatar-placeholder">👤</view>
   </view>
 
-  <!-- 头部区域 -->
-  <view class="header-section px-20 py-16">
+  <!-- 固定头部区域 -->
+  <view class="fixed-header px-20 py-16">
     <!-- 标题和用户头像区 -->
     <view class="title-header">
       <text class="main-title h1">伦敦必吃榜</text>
@@ -35,77 +35,88 @@
     </view>
   </view>
 
-  <!-- 加载状态 -->
-  <view class="loading-container" wx:if="{{isLoading}}">
-    <view class="loading-animation">⟳</view>
-    <text class="loading-text">加载榜单数据中...</text>
-  </view>
-
-  <!-- 错误状态 -->
-  <view class="error-container" wx:elif="{{loadError}}">
-    <view class="error-icon">❌</view>
-    <text class="error-text">加载失败</text>
-    <button class="retry-btn" bindtap="refreshData">重试</button>
-  </view>
-
-  <!-- 空数据状态 -->
-  <view class="empty-container" wx:elif="{{rankings.length === 0 && !isLoading}}">
-    <view class="empty-icon">📋</view>
-    <text class="empty-title">榜单暂无数据</text>
-    <text class="empty-text">成为第一个上榜的人吧！</text>
-    <button class="action-btn" bindtap="goToCreate">提名朋友</button>
-  </view>
-
-  <!-- 排行榜列表 -->
-  <view class="ranking-list px-20" wx:elif="{{rankings.length > 0}}">
-    <view 
-      class="ranking-item card flex items-center p-16 mb-16" 
-      wx:for="{{rankings}}" 
-      wx:key="id"
-      bindtap="goToDetail"
-      data-id="{{item.id}}"
-     style="position: relative; left: -1rpx; top: -60rpx">
-      <!-- 排名标识 -->
-      <view class="rank-indicator flex justify-center items-center">
-        <view wx:if="{{item.rank === 1}}" class="rank-icon">👑</view>
-        <view wx:elif="{{item.rank === 2}}" class="rank-icon">🏆</view>
-        <view wx:elif="{{item.rank === 3}}" class="rank-icon">⭐</view>
-        <text wx:else class="rank-number">{{item.rank}}</text>
-      </view>
-      
-      <!-- 头像 -->
-      <image class="avatar" src="{{item.avatar}}" mode="aspectFill" lazy-load="true"></image>
-      
-      <!-- 用户信息 -->
-      <view class="user-info flex-1 px-16">
-        <view class="flex items-center gap-8">
-          <text class="user-name h2">{{item.name}}</text>
-          <view wx:if="{{item.hotLevel >= 4}}" class="badge badge-red">
-            <text class="badge-icon">🔥</text>
-            <text class="badge-text">火热</text>
-          </view>
-          <view wx:elif="{{item.hotLevel >= 3}}" class="badge badge-green">
-            <text class="badge-icon">📈</text>
-            <text class="badge-text">上升</text>
-          </view>
-        </view>
-        <view class="flex items-center">
-          <text class="rank-position text-small">#{{item.rank}}</text>
-          <view class="trend-indicator flex items-center">
-            <view class="trend-dot {{item.trend === 'up' ? 'trend-up' : item.trend === 'down' ? 'trend-down' : 'trend-stable'}}"></view>
-            <text class="trend-text text-small {{item.trend === 'up' ? 'text-green' : item.trend === 'down' ? 'text-red' : 'text-gray'}}">
-              {{item.trend === 'up' ? '势头正猛' : item.trend === 'down' ? '有所下滑' : '稳定发挥'}}
-            </text>
-          </view>
-        </view>
-      </view>
-      
-      <!-- 人想吃 -->
-      <view class="vote-count flex flex-col items-center">
-        <text class="vote-number text-number">{{item.votes}}</text>
-        <text class="vote-label text-small">人想吃</text>
-      </view>
+  <!-- 可滚动的排行榜容器 -->
+  <view class="ranking-container">
+    <!-- 加载状态 -->
+    <view class="loading-container" wx:if="{{isLoading}}">
+      <view class="loading-animation">⟳</view>
+      <text class="loading-text">加载榜单数据中...</text>
     </view>
+
+    <!-- 错误状态 -->
+    <view class="error-container" wx:elif="{{loadError}}">
+      <view class="error-icon">❌</view>
+      <text class="error-text">加载失败</text>
+      <button class="retry-btn" bindtap="refreshData">重试</button>
+    </view>
+
+    <!-- 空数据状态 -->
+    <view class="empty-container" wx:elif="{{rankings.length === 0 && !isLoading}}">
+      <view class="empty-icon">📋</view>
+      <text class="empty-title">榜单暂无数据</text>
+      <text class="empty-text">成为第一个上榜的人吧！</text>
+      <button class="action-btn" bindtap="goToCreate">提名朋友</button>
+    </view>
+
+    <!-- 排行榜列表 - 使用scroll-view -->
+    <scroll-view 
+      class="ranking-scroll-view" 
+      scroll-y="true"
+      enable-back-to-top="true"
+      scroll-anchoring="true"
+      wx:elif="{{rankings.length > 0}}"
+    >
+      <view class="ranking-list px-20">
+        <view 
+          class="ranking-item card flex items-center p-16 mb-16" 
+          wx:for="{{rankings}}" 
+          wx:key="id"
+          bindtap="goToDetail"
+          data-id="{{item.id}}"
+        >
+          <!-- 排名标识 -->
+          <view class="rank-indicator flex justify-center items-center">
+            <view wx:if="{{item.rank === 1}}" class="rank-icon">👑</view>
+            <view wx:elif="{{item.rank === 2}}" class="rank-icon">🏆</view>
+            <view wx:elif="{{item.rank === 3}}" class="rank-icon">⭐</view>
+            <text wx:else class="rank-number">{{item.rank}}</text>
+          </view>
+          
+          <!-- 头像 -->
+          <image class="avatar" src="{{item.avatar}}" mode="aspectFill" lazy-load="true"></image>
+          
+          <!-- 用户信息 -->
+          <view class="user-info flex-1 px-16">
+            <view class="flex items-center gap-8">
+              <text class="user-name h2">{{item.name}}</text>
+              <view wx:if="{{item.hotLevel >= 4}}" class="badge badge-red">
+                <text class="badge-icon">🔥</text>
+                <text class="badge-text">火热</text>
+              </view>
+              <view wx:elif="{{item.hotLevel >= 3}}" class="badge badge-green">
+                <text class="badge-icon">📈</text>
+                <text class="badge-text">上升</text>
+              </view>
+            </view>
+            <view class="flex items-center">
+              <text class="rank-position text-small">#{{item.rank}}</text>
+              <view class="trend-indicator flex items-center">
+                <view class="trend-dot {{item.trend === 'up' ? 'trend-up' : item.trend === 'down' ? 'trend-down' : 'trend-stable'}}"></view>
+                <text class="trend-text text-small {{item.trend === 'up' ? 'text-green' : item.trend === 'down' ? 'text-red' : 'text-gray'}}">
+                  {{item.trend === 'up' ? '势头正猛' : item.trend === 'down' ? '有所下滑' : '稳定发挥'}}
+                </text>
+              </view>
+            </view>
+          </view>
+          
+          <!-- 人想吃 -->
+          <view class="vote-count flex flex-col items-center">
+            <text class="vote-number text-number">{{item.votes}}</text>
+            <text class="vote-label text-small">人想吃</text>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
   </view>
   
   <!-- 悬浮关于按钮 (左下角) -->
