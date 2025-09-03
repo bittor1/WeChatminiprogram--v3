@@ -355,42 +355,19 @@ Page({
       }
       return true;
     } else {
-      // 未登录，触发登录流程
-      try {
-        wx.showLoading({ title: '登录中...', mask: true });
-        
-        const loginResult = await app.triggerLogin();
-        wx.hideLoading();
-        
-        if (loginResult.success) {
-          if (loginResult.needsUserInfo) {
-            // 需要完善用户信息，显示授权弹窗
-            this.setData({ 
-              showAuthDialog: true,
-              _pendingAction: action // 保存待执行的操作
-            });
-            
-            wx.showToast({
-              title: `请完善用户信息以使用${actionName}`,
-              icon: 'none',
-              duration: 2000
-            });
-          } else {
-            // 登录成功，用户信息完整，执行操作
-            if (typeof action === 'function') {
-              action();
-            }
-          }
-          return true;
-        }
-      } catch (err) {
-        wx.hideLoading();
-        console.error('登录失败:', err);
-        wx.showToast({
-          title: `需要登录才能使用${actionName}`,
-          icon: 'none'
-        });
-      }
+      // 未登录，直接显示登录弹窗
+      console.log('用户未登录，显示登录弹窗:', actionName);
+      this.setData({
+        showAuthDialog: true,
+        _pendingAction: action // 保存待执行的操作
+      });
+      
+      wx.showToast({
+        title: `请登录以使用${actionName}`,
+        icon: 'none',
+        duration: 2000
+      });
+      
       return false;
     }
   },

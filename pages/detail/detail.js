@@ -1704,41 +1704,17 @@ Page({
       return;
     }
     
-    // 未登录，触发登录流程
-    wx.showLoading({ title: '登录中...', mask: true });
+    // 未登录，直接显示登录弹窗
+    console.log('用户未登录，显示登录弹窗:', actionName);
+    this.setData({
+      showAuthDialog: true,
+      _pendingAction: action // 保存待执行的操作
+    });
     
-    app.triggerLogin().then(loginResult => {
-      wx.hideLoading();
-      console.log('登录结果:', loginResult);
-      
-      if (loginResult && loginResult.success) {
-        if (loginResult.needsUserInfo) {
-          // 需要完善用户信息，显示授权弹窗
-          this.setData({
-            showAuthDialog: true,
-            _pendingAction: action // 保存待执行的操作
-          });
-        } else {
-          // 登录成功且信息完整，更新页面状态并执行操作
-          app.globalData.isLoggedIn = true;
-          
-          if (typeof action === 'function') {
-            action();
-          }
-        }
-      } else {
-        wx.showToast({
-          title: (loginResult && loginResult.message) || '登录失败',
-          icon: 'error'
-        });
-      }
-    }).catch(err => {
-      wx.hideLoading();
-      console.error('登录失败:', err);
-      wx.showToast({
-        title: '登录失败',
-        icon: 'error'
-      });
+    wx.showToast({
+      title: `请登录以使用${actionName || '该功能'}`,
+      icon: 'none',
+      duration: 2000
     });
   },
 
