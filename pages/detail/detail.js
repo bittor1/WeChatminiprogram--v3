@@ -103,9 +103,6 @@ Page({
         entryId: entryId
       });
       
-      // 初始化音频管理器
-      this.initAudioManagers();
-      
       // 并行加载页面数据
       this.loadPageDataParallel();
     } else {
@@ -964,6 +961,26 @@ Page({
     
     console.log('✅ 音效已启用，继续获取音效文件');
     
+    // 懒加载：需要播放音效时才初始化音频管理器
+    if (!this.data.innerAudioContext) {
+      console.log('🔊 首次播放音效，初始化音频播放器...');
+      this.data.innerAudioContext = wx.createInnerAudioContext();
+      
+      // 添加播放事件监听
+      var self = this;
+      this.data.innerAudioContext.onPlay(function() {
+        console.log('音频播放开始');
+      });
+      
+      this.data.innerAudioContext.onEnded(function() {
+        console.log('音频播放结束');
+      });
+      
+      this.data.innerAudioContext.onError(function(err) {
+        console.error('音频播放错误', err);
+      });
+    }
+    
     // 获取页面音效设置
     wx.cloud.callFunction({
       name: 'soundManage',
@@ -1408,6 +1425,12 @@ Page({
   // 录制音效
   recordSound: function() {
     this.requireLogin(() => {
+      // 懒加载：首次使用时才初始化音频管理器
+      if (!this.data.recorderManager || !this.data.innerAudioContext) {
+        console.log('🎤 首次使用音频功能，初始化音频管理器...');
+        this.initAudioManagers();
+      }
+      
       if (this.data.recordingState === 'idle') {
         this.startRecording();
       } else if (this.data.recordingState === 'recorded') {
@@ -1509,6 +1532,35 @@ Page({
   // 预览录音
   previewRecordedSound: function() {
     if (this.data.tempSoundPath) {
+      // 确保音频播放器已初始化
+      if (!this.data.innerAudioContext) {
+        console.log('🔊 预览音效需要初始化音频播放器...');
+        this.data.innerAudioContext = wx.createInnerAudioContext();
+        
+        // 添加播放事件监听
+        var self = this;
+        this.data.innerAudioContext.onPlay(function() {
+          console.log('预览音频播放开始');
+          self.setData({
+            isPreviewPlaying: true
+          });
+        });
+        
+        this.data.innerAudioContext.onEnded(function() {
+          console.log('预览音频播放结束');
+          self.setData({
+            isPreviewPlaying: false
+          });
+        });
+        
+        this.data.innerAudioContext.onError(function(err) {
+          console.error('预览音频播放错误', err);
+          self.setData({
+            isPreviewPlaying: false
+          });
+        });
+      }
+      
       this.data.innerAudioContext.src = this.data.tempSoundPath;
       this.data.innerAudioContext.play();
     }

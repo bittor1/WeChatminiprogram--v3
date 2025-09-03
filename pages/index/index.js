@@ -35,6 +35,11 @@ Page({
     
     if (app.globalData.isLoggedIn && app.globalData.userInfo && app.globalData.userInfo.isInfoComplete) {
       console.log('用户已登录且信息完整，显示用户信息');
+      console.log('🎭 页面加载时显示用户头像:', {
+        avatarUrl: app.globalData.userInfo.avatarUrl,
+        avatar: app.globalData.userInfo.avatar,
+        displayUrl: app.globalData.userInfo.avatarUrl || app.globalData.userInfo.avatar
+      });
       this.setData({ 
         userInfo: app.globalData.userInfo 
       });
@@ -504,7 +509,18 @@ Page({
   // 处理用户信息更新事件
   handleUserInfoUpdate(e) {
     const userInfo = e.detail.userInfo;
-    this.setData({ userInfo });
+    console.log('🎭 主页接收用户信息更新:', {
+      avatarUrl: userInfo?.avatarUrl,
+      avatar: userInfo?.avatar,
+      displayUrl: userInfo?.avatarUrl || userInfo?.avatar
+    });
+    
+    // 立即更新用户信息，确保头像同步
+    this.setData({ 
+      userInfo: userInfo 
+    }, () => {
+      console.log('✅ 主页用户头像已同步更新');
+    });
   },
   
 
@@ -521,9 +537,23 @@ Page({
     // 关闭授权对话框
     this.setData({ showAuthDialog: false });
     
-    // 刷新用户信息和页面数据
-    const userInfo = wx.getStorageSync('userInfo') || app.globalData.userInfo;
-    this.setData({ userInfo });
+    // 获取最新的用户信息（优先使用登录事件传递的数据）
+    const updatedUserInfo = e.detail.userInfo || wx.getStorageSync('userInfo') || app.globalData.userInfo;
+    console.log('🎭 更新主页头像，用户信息:', updatedUserInfo);
+    console.log('🔍 头像字段检查:', {
+      avatarUrl: updatedUserInfo?.avatarUrl,
+      avatar: updatedUserInfo?.avatar,
+      displayUrl: updatedUserInfo?.avatarUrl || updatedUserInfo?.avatar
+    });
+    
+    // 立即更新用户信息，确保头像显示
+    this.setData({ 
+      userInfo: updatedUserInfo 
+    }, () => {
+      console.log('✅ 主页用户头像已更新');
+    });
+    
+    // 刷新页面数据
     this.refreshData();
     
     // 如果有待执行的操作，执行它

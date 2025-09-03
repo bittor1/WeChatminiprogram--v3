@@ -1,7 +1,7 @@
 <view class="page-container">
   <!-- 独立的用户头像按钮 - 固定在右上角 -->
   <view class="top-right-avatar-fixed" catchtap="openUserCenter" data-test="user-center-avatar">
-    <image wx:if="{{userInfo && userInfo.avatar}}" class="avatar-image" src="{{userInfo.avatar}}" mode="aspectFill"></image>
+    <image wx:if="{{userInfo && (userInfo.avatarUrl || userInfo.avatar)}}" class="avatar-image" src="{{userInfo.avatarUrl || userInfo.avatar}}" mode="aspectFill"></image>
     <view wx:else class="avatar-placeholder">👤</view>
   </view>
 

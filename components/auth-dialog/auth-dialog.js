@@ -121,6 +121,33 @@ Component({
         console.log('头像文件路径:', this.data.avatarUrl);
         
         // 1. 上传头像到云存储
+        console.log('📤 准备上传文件，路径检查:', this.data.avatarUrl);
+        
+        // 检查临时文件路径是否有效
+        console.log('🔍 临时文件路径格式检查:', {
+          avatarUrl: this.data.avatarUrl,
+          type: typeof this.data.avatarUrl,
+          length: this.data.avatarUrl ? this.data.avatarUrl.length : 0,
+          startsWithWxfile: this.data.avatarUrl ? this.data.avatarUrl.startsWith('wxfile://') : false,
+          startsWithTmp: this.data.avatarUrl ? this.data.avatarUrl.includes('tmp') : false
+        });
+        
+        if (!this.data.avatarUrl || this.data.avatarUrl.trim() === '') {
+          throw new Error('头像临时文件路径为空，请重新选择头像');
+        }
+        
+        // 验证临时文件路径格式（支持多种格式）
+        const isValidTempPath = this.data.avatarUrl.startsWith('wxfile://') || 
+                               this.data.avatarUrl.startsWith('http://tmp/') ||
+                               this.data.avatarUrl.includes('tmp');
+        
+        if (!isValidTempPath) {
+          console.error('❌ 临时文件路径格式异常:', this.data.avatarUrl);
+          throw new Error('头像临时文件路径格式异常，请重新选择头像');
+        }
+        
+        console.log('✅ 临时文件路径验证通过:', this.data.avatarUrl);
+        
         const uploadResult = await wx.cloud.uploadFile({
           cloudPath: `user_avatars/${Date.now()}-${Math.floor(Math.random() * 1000)}.jpg`,
           filePath: this.data.avatarUrl
@@ -189,6 +216,13 @@ Component({
           errorMessage = '头像上传失败，请检查网络后重试';
         } else if (err.message && err.message.includes('云函数')) {
           errorMessage = '用户信息保存失败，请重试';
+        } else if (err.message && err.message.includes('ENOENT')) {
+          errorMessage = '临时文件已失效，请重新选择头像';
+          // 显示重试提示
+          this.setData({ showRetryTip: true });
+        } else if (err.message && err.message.includes('临时文件路径无效')) {
+          errorMessage = '请重新选择头像';
+          this.setData({ showRetryTip: true });
         } else if (err.message) {
           errorMessage = err.message;
         }
