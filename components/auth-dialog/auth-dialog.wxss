@@ -148,3 +148,29 @@
   transform: scale(0.98);
   box-shadow: 0 2rpx 8rpx rgba(16, 185, 129, 0.4);
 }
+
+/* 重试提示 */
+.retry-tip {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16rpx;
+  margin-top: 16rpx;
+  padding: 8rpx 16rpx;
+  background-color: #fef3cd;
+  border: 2rpx solid #ffeaa7;
+  border-radius: 16rpx;
+}
+
+.retry-text {
+  font-size: 22rpx;
+  color: #856404;
+}
+
+.retry-btn {
+  font-size: 22rpx;
+  color: #007bff;
+  text-decoration: underline;
+  cursor: pointer;
+}

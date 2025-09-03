@@ -9,6 +9,12 @@
         <view class="avatar-tip">点击选择头像</view>
       </button>
       
+      <!-- 重试提示 -->
+      <view class="retry-tip" wx:if="{{showRetryTip}}">
+        <text class="retry-text">头像选择异常？</text>
+        <text class="retry-btn" bindtap="resetAvatar">重新选择</text>
+      </view>
+      
       <!-- 第二行：昵称 -->
       <view class="nickname-section">
         <input 
@@ -28,7 +34,7 @@
           class="confirm-btn" 
           bindtap="handleConfirm" 
           loading="{{isSaving}}" 
-          disabled="{{!avatarUrl || !nickname.trim() || isSaving}}">
+          disabled="{{!avatarUrl || !nickname || isSaving}}">
           确认登录
         </button>
       </view>
