@@ -33,29 +33,71 @@
   justify-content: space-evenly; /* 均匀分布 */
 }
 
-/* 第一行：头像 */
+/* 第一行：头像包装器 */
+.avatar-wrapper {
+  width: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  text-align: center !important;
+}
+
+/* 头像按钮 */
 .avatar-section {
-  padding: 0;
-  border: none;
-  background: none;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12rpx; /* 减小间距 */
+  /* 完全重置button默认样式 */
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  background: none !important;
+  outline: none !important;
+  box-sizing: border-box !important;
+  
+  /* Flex布局居中 */
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  
+  /* 尺寸控制 */
+  width: 100% !important;
+  min-width: 100% !important;
+  
+  /* 间距 */
+  gap: 12rpx;
+  
+  /* 文本居中作为备用 */
+  text-align: center !important;
+  
+  /* 清除button的默认行为 */
+  -webkit-appearance: none !important;
+  appearance: none !important;
 }
 
 .avatar-image {
-  width: 100rpx; /* 稍微缩小头像 */
-  height: 100rpx;
+  width: 100rpx !important;
+  height: 100rpx !important;
   border-radius: 50%;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
   border: 4rpx solid #f0f0f0;
+  /* 强制居中 */
+  object-fit: cover;
+  flex-shrink: 0;
+  align-self: center !important; /* 在flex容器中强制居中 */
+  margin: 0 auto !important;
+  display: block !important;
 }
 
 .avatar-tip {
-  font-size: 24rpx; /* 基准字号 */
+  font-size: 24rpx !important;
   color: #999;
-  text-align: center;
+  /* 强制文字居中 */
+  line-height: 1.2;
+  white-space: nowrap;
+  text-align: center !important;
+  align-self: center !important; /* 在flex容器中强制居中 */
+  width: 100% !important;
+  display: block !important;
+  margin: 0 auto !important;
 }
 
 /* 第二行：昵称 */

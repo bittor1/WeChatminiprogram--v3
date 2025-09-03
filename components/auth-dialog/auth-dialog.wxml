@@ -4,10 +4,12 @@
     <!-- 简洁三行布局 -->
     <view class="auth-content">
       <!-- 第一行：头像 -->
-      <button class="avatar-section" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar" disabled="{{isSaving}}">
-        <image class="avatar-image" src="{{avatarUrl || '/images/placeholder-user.jpg'}}"></image>
-        <view class="avatar-tip">点击选择头像</view>
-      </button>
+      <view class="avatar-wrapper">
+        <button class="avatar-section" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar" disabled="{{isSaving}}">
+          <image class="avatar-image" src="{{avatarUrl || '/images/placeholder-user.jpg'}}"></image>
+          <view class="avatar-tip">点击选择头像</view>
+        </button>
+      </view>
       
       <!-- 重试提示 -->
       <view class="retry-tip" wx:if="{{showRetryTip}}">

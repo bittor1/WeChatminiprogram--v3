@@ -1747,19 +1747,35 @@ Page({
       }, 1000);
     }
     
+    // 优先使用shareInfo中的图片URL，这是经过优化处理的
+    var imageUrl = this.data.shareInfo.imageUrl || 
+                   this.data.entryInfo.avatarUrl || 
+                   this.data.entryInfo.avatar || 
+                   '/images/placeholder-user.jpg';
+    
+    console.log('📤 分享给好友，使用图片URL:', imageUrl);
+    
     return {
       title: '伦敦必吃榜',
       path: '/pages/detail/detail?id=' + this.data.entryId,
-      imageUrl: this.data.entryInfo.avatarUrl || this.data.entryInfo.avatar || '/images/placeholder-user.jpg'
+      imageUrl: imageUrl
     };
   },
 
   // 分享到朋友圈
   onShareTimeline: function() {
+    // 优先使用shareInfo中的图片URL，这是经过优化处理的
+    var imageUrl = this.data.shareInfo.imageUrl || 
+                   this.data.entryInfo.avatarUrl || 
+                   this.data.entryInfo.avatar || 
+                   '/images/placeholder-user.jpg';
+    
+    console.log('📤 分享到朋友圈，使用图片URL:', imageUrl);
+    
     return {
       title: '伦敦必吃榜',
       query: 'id=' + this.data.entryId,
-      imageUrl: this.data.entryInfo.avatarUrl || this.data.entryInfo.avatar || '/images/placeholder-user.jpg'
+      imageUrl: imageUrl
     };
   },
 
